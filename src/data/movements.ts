@@ -29,7 +29,7 @@ export const MOVEMENT_CATEGORIES_DATA: MovementCategoryInfo[] = [
     name: 'Pull',
     icon: ArrowDownCircle,
     progressions: [
-      { name: 'Dead Hang', level: 1, isRepBased: false, description: "Time-based, disabled in MVP" }, // Disabled in MVP as it's time-based
+      { name: 'Dead Hang', level: 1, isRepBased: false, defaultDurationSeconds: 30, description: "Hold for time." },
       { name: 'Scapular Pulls', level: 2, isRepBased: true },
       { name: 'Assisted Pull-Ups/Rows', level: 3, isRepBased: true },
       { name: 'Negative Pull-Ups', level: 4, isRepBased: true },
@@ -38,7 +38,7 @@ export const MOVEMENT_CATEGORIES_DATA: MovementCategoryInfo[] = [
       { name: 'Full Pull-Ups', level: 7, isRepBased: true },
       { name: 'Close Grip Pull-Ups', level: 8, isRepBased: true },
       { name: 'Wide Grip Pull-Ups', level: 9, isRepBased: true },
-      { name: 'Muscle-Up (Transition)', level: 10, isRepBased: true }, // Focus on the transition part for reps
+      { name: 'Muscle-Up (Transition)', level: 10, isRepBased: true },
     ],
   },
   {
@@ -48,13 +48,13 @@ export const MOVEMENT_CATEGORIES_DATA: MovementCategoryInfo[] = [
     progressions: [
       { name: 'Bench Dips (Feet on Floor)', level: 1, isRepBased: true },
       { name: 'Bench Dips (Feet Elevated)', level: 2, isRepBased: true },
-      { name: 'Support Hold (Parallel Bars)', level: 3, isRepBased: false, description: "Time-based, disabled in MVP" }, // Disabled
+      { name: 'Support Hold (Parallel Bars)', level: 3, isRepBased: false, defaultDurationSeconds: 30, description: "Hold for time." },
       { name: 'Assisted Dips (Machine or Bands)', level: 4, isRepBased: true },
       { name: 'Negative Dips', level: 5, isRepBased: true },
       { name: 'Full Dips (Parallel Bars)', level: 6, isRepBased: true },
       { name: 'Ring Dips', level: 7, isRepBased: true },
       { name: 'Korean Dips', level: 8, isRepBased: true },
-      { name: 'Weighted Dips', level: 9, isRepBased: true }, // Assuming bodyweight equivalent progression before actual weights
+      { name: 'Weighted Dips', level: 9, isRepBased: true },
       { name: 'Straight Bar Dips', level: 10, isRepBased: true },
     ],
   },
@@ -81,15 +81,20 @@ export const MOVEMENT_CATEGORIES_DATA: MovementCategoryInfo[] = [
     icon: Zap,
     progressions: [
       { name: 'Lying Knee Tucks', level: 1, isRepBased: true },
-      { name: 'Lying Leg Raises (Bent Knees)', level: 2, isRepBased: true }, // Modified for clarity
+      { name: 'Lying Leg Raises (Bent Knees)', level: 2, isRepBased: true },
       { name: 'Hanging Knee Raises', level: 3, isRepBased: true },
-      { name: 'Hanging Leg Raises (Straight Legs)', level: 4, isRepBased: true }, // Modified for clarity
+      { name: 'Hanging Leg Raises (Straight Legs)', level: 4, isRepBased: true },
       { name: 'Toes-to-Bar', level: 5, isRepBased: true },
-      { name: 'L-Sit (Floor or Parallel Bars)', level: 6, isRepBased: false, description: "Time-based, disabled in MVP" }, // Disabled
+      { name: 'L-Sit (Floor or Parallel Bars)', level: 6, isRepBased: false, defaultDurationSeconds: 20, description: "Hold for time." },
       { name: 'Windshield Wipers (Lying)', level: 7, isRepBased: true },
-      { name: 'Dragon Flag Negatives', level: 8, isRepBased: true }, // Modified to be rep-based
+      { name: 'Dragon Flag Negatives', level: 8, isRepBased: true },
       { name: 'V-Ups', level: 9, isRepBased: true },
-      { name: 'Front Lever Tucks/Progressions', level: 10, isRepBased: true }, // Focus on tucks/reps of holds
+      { name: 'Front Lever Tucks/Progressions', level: 10, isRepBased: true },
+      // Warm-up specific exercises, can be moved to a dedicated "Warm-up" category later
+      { name: 'Plank', level: 0, isRepBased: false, defaultDurationSeconds: 60, description: "Hold for time. (Warm-up)"}, // level 0 to distinguish
+      { name: 'Bridge', level: 0, isRepBased: false, defaultDurationSeconds: 60, description: "Hold for time. (Warm-up)"},
+      // 'Blocking' is too vague, assuming 'Bird Dog' / 'Quadruped Limb Raises' or similar core stability
+      { name: 'Bird Dog Hold', level: 0, isRepBased: false, defaultDurationSeconds: 30, description: "Alternating sides, hold each. (Warm-up)"},
     ],
   },
 ];

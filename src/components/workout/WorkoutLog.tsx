@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { Clock } from 'lucide-react';
 
 interface WorkoutLogProps {
   history: WorkoutEntry[];
@@ -47,8 +48,16 @@ export function WorkoutLog({ history, title = "Recent Workouts", maxEntries = 5 
                 <p className="text-sm text-muted-foreground mb-1">
                   {format(new Date(entry.date), "MMM d, yyyy 'at' h:mm a")}
                 </p>
-                <p className="text-sm">Total Reps: <span className="font-medium">{entry.totalReps}</span></p>
-                {entry.waves.length > 0 && (
+                {entry.totalReps !== undefined && entry.totalReps > 0 && (
+                  <p className="text-sm">Total Reps: <span className="font-medium">{entry.totalReps}</span></p>
+                )}
+                {entry.durationSeconds !== undefined && entry.durationSeconds > 0 && (
+                  <p className="text-sm flex items-center gap-1">
+                    <Clock className="h-3 w-3 text-muted-foreground" />
+                    Duration: <span className="font-medium">{entry.durationSeconds}s</span>
+                  </p>
+                )}
+                {entry.waves && entry.waves.length > 0 && (
                   <details className="mt-1 text-xs">
                     <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Wave Details</summary>
                     <ul className="pl-4 list-disc list-inside mt-1">

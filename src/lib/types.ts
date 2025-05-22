@@ -7,7 +7,8 @@ export interface Movement {
   name: MovementName;
   level: number;
   description?: string;
-  isRepBased: boolean; // True for rep-based, false for time-based (disabled in MVP)
+  isRepBased: boolean; // True for rep-based, false for time-based
+  defaultDurationSeconds?: number; // For time-based exercises
 }
 
 export type MovementCategoryName = 'Push' | 'Pull' | 'Dips' | 'Legs' | 'Core';
@@ -29,12 +30,13 @@ export interface WorkoutEntry {
   id: string; // unique id for the log entry, e.g., timestamp
   date: string; // ISO string
   categoryName: MovementCategoryName;
-  movementName: MovementName; // Specific movement performed within the category for this entry
-  levelAchieved: number; // Highest level reps were performed on for this entry
-  totalReps: number; // Total reps completed for this movement category in the session
-  waves: WaveData[];
+  movementName: MovementName; // Specific movement performed
+  levelAchieved: number; // Level of the movement performed
+  totalReps?: number; // Total reps completed (for rep-based)
+  durationSeconds?: number; // Total duration in seconds (for time-based)
+  waves?: WaveData[]; // For rep-based
   caloriesBurned?: number; // Optional, for future
-  duration?: number; // Optional, in seconds, for future
+  // duration field was here, renamed to durationSeconds for clarity
 }
 
 export interface UserLevels {
@@ -45,7 +47,7 @@ export interface UserLevels {
 export interface SelectedMovement {
   category: MovementCategoryInfo;
   // User might start at a level different from their max unlocked level
-  startingLevel: number; 
+  startingLevel: number;
 }
 
 export interface WorkoutContextType {
@@ -67,3 +69,12 @@ export interface WorkoutContextType {
 
 export const DEFAULT_TARGET_REPS = 50;
 export const LEVEL_UP_THRESHOLD_REPS = 30;
+
+// For Timer Component
+export interface TimerProps {
+  initialDuration: number; // in seconds
+  onTimerComplete?: () => void; // Optional: callback when timer finishes
+  onTimeUpdate?: (timeLeft: number) => void; // Optional: callback on every second tick
+  autoStart?: boolean;
+  className?: string;
+}
