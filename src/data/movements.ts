@@ -29,7 +29,7 @@ export const MOVEMENT_CATEGORIES_DATA: MovementCategoryInfo[] = [
     name: 'Pull',
     icon: ArrowDownCircle,
     progressions: [
-      { name: 'Dead Hang', level: 1, isRepBased: false, defaultDurationSeconds: 30, description: "Hold for time." },
+      { name: 'Dead Hang', level: 1, isRepBased: false, defaultDurationSeconds: 60, description: "Hold for time. Target: 60 seconds." },
       { name: 'Scapular Pulls', level: 2, isRepBased: true },
       { name: 'Assisted Pull-Ups/Rows', level: 3, isRepBased: true },
       { name: 'Negative Pull-Ups', level: 4, isRepBased: true },
@@ -48,7 +48,7 @@ export const MOVEMENT_CATEGORIES_DATA: MovementCategoryInfo[] = [
     progressions: [
       { name: 'Bench Dips (Feet on Floor)', level: 1, isRepBased: true },
       { name: 'Bench Dips (Feet Elevated)', level: 2, isRepBased: true },
-      { name: 'Support Hold (Parallel Bars)', level: 3, isRepBased: false, defaultDurationSeconds: 30, description: "Hold for time." },
+      { name: 'Support Hold (Parallel Bars)', level: 3, isRepBased: false, defaultDurationSeconds: 30, description: "Hold for time. Target: 30 seconds." },
       { name: 'Assisted Dips (Machine or Bands)', level: 4, isRepBased: true },
       { name: 'Negative Dips', level: 5, isRepBased: true },
       { name: 'Full Dips (Parallel Bars)', level: 6, isRepBased: true },
@@ -85,16 +85,15 @@ export const MOVEMENT_CATEGORIES_DATA: MovementCategoryInfo[] = [
       { name: 'Hanging Knee Raises', level: 3, isRepBased: true },
       { name: 'Hanging Leg Raises (Straight Legs)', level: 4, isRepBased: true },
       { name: 'Toes-to-Bar', level: 5, isRepBased: true },
-      { name: 'L-Sit (Floor or Parallel Bars)', level: 6, isRepBased: false, defaultDurationSeconds: 20, description: "Hold for time." },
+      { name: 'L-Sit (Floor or Parallel Bars)', level: 6, isRepBased: false, defaultDurationSeconds: 20, description: "Hold for time. Target: 20 seconds." },
       { name: 'Windshield Wipers (Lying)', level: 7, isRepBased: true },
       { name: 'Dragon Flag Negatives', level: 8, isRepBased: true },
       { name: 'V-Ups', level: 9, isRepBased: true },
       { name: 'Front Lever Tucks/Progressions', level: 10, isRepBased: true },
-      // Warm-up specific exercises, can be moved to a dedicated "Warm-up" category later
-      { name: 'Plank', level: 0, isRepBased: false, defaultDurationSeconds: 60, description: "Hold for time. (Warm-up)"}, // level 0 to distinguish
-      { name: 'Bridge', level: 0, isRepBased: false, defaultDurationSeconds: 60, description: "Hold for time. (Warm-up)"},
-      // 'Blocking' is too vague, assuming 'Bird Dog' / 'Quadruped Limb Raises' or similar core stability
-      { name: 'Bird Dog Hold', level: 0, isRepBased: false, defaultDurationSeconds: 30, description: "Alternating sides, hold each. (Warm-up)"},
+      // Warm-up specific exercises
+      { name: 'Plank', level: 0, isRepBased: false, defaultDurationSeconds: 60, description: "Hold for time. Target: 60s. (Warm-up)"},
+      { name: 'Bridge', level: 0, isRepBased: false, defaultDurationSeconds: 60, description: "Hold for time. Target: 60s. (Warm-up)"},
+      { name: 'Bird Dog Hold', level: 0, isRepBased: false, defaultDurationSeconds: 30, description: "Alternating sides, hold each. Target: 30s each side. (Warm-up)"},
     ],
   },
 ];
@@ -110,3 +109,4 @@ export function getMovementByName(category: MovementCategoryInfo, movementName: 
 export function getMovementByLevel(category: MovementCategoryInfo, level: number) {
   return category.progressions.find(p => p.level === level);
 }
+

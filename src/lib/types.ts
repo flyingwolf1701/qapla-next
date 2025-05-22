@@ -8,7 +8,7 @@ export interface Movement {
   level: number;
   description?: string;
   isRepBased: boolean; // True for rep-based, false for time-based
-  defaultDurationSeconds?: number; // For time-based exercises
+  defaultDurationSeconds?: number; // For time-based exercises, this is the target duration.
 }
 
 export type MovementCategoryName = 'Push' | 'Pull' | 'Dips' | 'Legs' | 'Core';
@@ -36,7 +36,6 @@ export interface WorkoutEntry {
   durationSeconds?: number; // Total duration in seconds (for time-based)
   waves?: WaveData[]; // For rep-based
   caloriesBurned?: number; // Optional, for future
-  // duration field was here, renamed to durationSeconds for clarity
 }
 
 export interface UserLevels {
@@ -46,7 +45,6 @@ export interface UserLevels {
 // Used for passing selected movements to the session
 export interface SelectedMovement {
   category: MovementCategoryInfo;
-  // User might start at a level different from their max unlocked level
   startingLevel: number;
 }
 
@@ -68,13 +66,14 @@ export interface WorkoutContextType {
 }
 
 export const DEFAULT_TARGET_REPS = 50;
-export const LEVEL_UP_THRESHOLD_REPS = 30;
+export const LEVEL_UP_THRESHOLD_REPS = 30; // For rep-based exercises
 
 // For Timer Component
 export interface TimerProps {
-  initialDuration: number; // in seconds
-  onTimerComplete?: () => void; // Optional: callback when timer finishes
-  onTimeUpdate?: (timeLeft: number) => void; // Optional: callback on every second tick
+  targetDuration: number; // in seconds. Timer counts UP to this.
+  onTimerComplete?: (timeAchieved: number) => void; // Callback when timer target is reached or skipped. Passes actual time.
+  onTimeUpdate?: (elapsedTime: number) => void; // Callback on every second tick with current elapsed time.
   autoStart?: boolean;
   className?: string;
 }
+
