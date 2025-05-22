@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Play, Pause, RotateCcw, TimerIcon } from 'lucide-react';
 import type { TimerProps } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils'; // Added import
 
 const formatTime = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
