@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useWorkoutState } from '@/providers/WorkoutStateProvider';
 import { Separator } from './ui/separator';
+import { ThemeToggle } from './ThemeToggle';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -67,9 +68,12 @@ export function AppSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="mt-auto">
+      <SidebarFooter className="mt-auto p-2">
+        <div className="flex justify-center mb-2">
+          <ThemeToggle />
+        </div>
         <Separator className="my-2" />
-         <p className="text-xs text-center text-muted-foreground p-2 group-data-[collapsible=icon]:hidden">
+         <p className="text-xs text-center text-muted-foreground group-data-[collapsible=icon]:hidden">
             Success is showing up!
           </p>
       </SidebarFooter>

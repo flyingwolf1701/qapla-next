@@ -5,6 +5,7 @@ import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { WorkoutStateProvider } from '@/providers/WorkoutStateProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 const geistSans = GeistSans;
 const geistMono = GeistMono;
@@ -22,10 +23,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <WorkoutStateProvider>
-          {children}
-          <Toaster />
-        </WorkoutStateProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <WorkoutStateProvider>
+            {children}
+            <Toaster />
+          </WorkoutStateProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
