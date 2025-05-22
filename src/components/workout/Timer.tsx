@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, RotateCcw, TimerIcon, SkipForward } from 'lucide-react'; // Added SkipForward
+import { Play, Pause, RotateCcw, TimerIcon, SkipForward } from 'lucide-react';
 import type { TimerProps } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -15,69 +15,73 @@ const formatTime = (seconds: number): string => {
 };
 
 export function Timer({ targetDuration, onTimerComplete, onTimeUpdate, autoStart = false, className }: TimerProps) {
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [internalElapsedTime, setInternalElapsedTime] = useState(0);
   const [isRunning, setIsRunning] = useState(autoStart);
   const [isCompleted, setIsCompleted] = useState(false); // Tracks if target has been reached
 
+  // Effect to reset timer state when targetDuration or autoStart changes (e.g. new exercise selected)
   useEffect(() => {
-    setElapsedTime(0);
+    setInternalElapsedTime(0);
     setIsRunning(autoStart);
     setIsCompleted(false);
   }, [targetDuration, autoStart]);
 
+  // Effect for the main timer interval logic
   useEffect(() => {
-    if (!isRunning || isCompleted) { // Stop if not running or already completed goal
+    if (!isRunning || isCompleted) {
       return;
     }
 
-    if (elapsedTime >= targetDuration) {
+    // This check handles the case where elapsedTime might already be >= targetDuration
+    // due to quick succession of state changes or if autoStart and targetDuration are 0.
+    if (internalElapsedTime >= targetDuration) {
       setIsCompleted(true);
-      setIsRunning(false); // Stop the timer
-      onTimerComplete?.(targetDuration); // Report target duration as achieved
+      setIsRunning(false);
+      onTimerComplete?.(targetDuration);
       return;
     }
 
     const intervalId = setInterval(() => {
-      setElapsedTime(prevTime => {
+      setInternalElapsedTime(prevTime => {
         const newTime = prevTime + 1;
-        onTimeUpdate?.(newTime);
         if (newTime >= targetDuration) {
-          clearInterval(intervalId); // Clear interval when target is met
+          clearInterval(intervalId);
           setIsCompleted(true);
           setIsRunning(false);
-          onTimerComplete?.(targetDuration);
-          return targetDuration; // Ensure elapsedTime doesn't exceed target
+          onTimerComplete?.(targetDuration); // Report target duration as achieved
+          return targetDuration; // Ensure internalElapsedTime doesn't exceed target
         }
         return newTime;
       });
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [isRunning, elapsedTime, targetDuration, onTimerComplete, onTimeUpdate, isCompleted]);
+  }, [isRunning, internalElapsedTime, targetDuration, onTimerComplete, isCompleted]);
+
+  // Effect to call onTimeUpdate prop when internalElapsedTime changes
+  useEffect(() => {
+    onTimeUpdate?.(internalElapsedTime);
+  }, [internalElapsedTime, onTimeUpdate]);
+
 
   const handleStartPause = useCallback(() => {
-    if (isCompleted) return; // Don't allow start/pause if already completed
+    if (isCompleted && internalElapsedTime >= targetDuration) return; // Don't allow start/pause if already completed goal
     setIsRunning(prev => !prev);
-  }, [isCompleted]);
+  }, [isCompleted, internalElapsedTime, targetDuration]);
 
   const handleReset = useCallback(() => {
     setIsRunning(false);
-    setElapsedTime(0);
+    setInternalElapsedTime(0); // This will trigger the useEffect above to call onTimeUpdate(0)
     setIsCompleted(false);
-    onTimeUpdate?.(0);
-  }, [onTimeUpdate]);
+  }, []);
 
   const handleSkip = useCallback(() => {
     setIsRunning(false);
-    // Report the time elapsed so far, or targetDuration if user skips *after* reaching it.
-    // If skipping before target, it logs the partial time.
-    const timeToReport = isCompleted ? targetDuration : elapsedTime;
+    const timeToReport = isCompleted ? targetDuration : internalElapsedTime;
     onTimerComplete?.(timeToReport); 
-    // Visually, we can set it to target to show "skipped to end" or keep current elapsed
-    setElapsedTime(timeToReport); // Update elapsed time to what's reported
+    setInternalElapsedTime(timeToReport); 
     if (timeToReport >= targetDuration) setIsCompleted(true);
-
-  }, [onTimerComplete, elapsedTime, targetDuration, isCompleted]);
+  }, [onTimerComplete, internalElapsedTime, targetDuration, isCompleted]);
 
 
   return (
@@ -91,13 +95,13 @@ export function Timer({ targetDuration, onTimerComplete, onTimeUpdate, autoStart
       </CardHeader>
       <CardContent>
         <div className="text-6xl font-mono my-4" role="timer" aria-live="assertive">
-          {formatTime(elapsedTime)}
+          {formatTime(internalElapsedTime)}
         </div>
-        {isCompleted && elapsedTime >= targetDuration && <p className="text-green-600 font-semibold">Target Reached!</p>}
-        {isCompleted && elapsedTime < targetDuration && <p className="text-yellow-600 font-semibold">Skipped at {formatTime(elapsedTime)}</p>}
+        {isCompleted && internalElapsedTime >= targetDuration && <p className="text-green-600 font-semibold">Target Reached!</p>}
+        {isCompleted && internalElapsedTime < targetDuration && <p className="text-yellow-600 font-semibold">Skipped at {formatTime(internalElapsedTime)}</p>}
       </CardContent>
       <CardFooter className="flex flex-col sm:flex-row justify-center gap-2">
-        <Button onClick={handleStartPause} disabled={isCompleted && elapsedTime >= targetDuration} variant="outline" className="w-full sm:w-auto">
+        <Button onClick={handleStartPause} disabled={isCompleted && internalElapsedTime >= targetDuration} variant="outline" className="w-full sm:w-auto">
           {isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
           {isRunning ? 'Pause' : 'Start'}
         </Button>
@@ -111,4 +115,3 @@ export function Timer({ targetDuration, onTimerComplete, onTimeUpdate, autoStart
     </Card>
   );
 }
-
