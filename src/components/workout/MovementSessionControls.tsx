@@ -16,6 +16,7 @@ import { ChevronDown, ChevronUp, CheckSquare, RotateCcw, Info } from 'lucide-rea
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
+import { Label } from '@/components/ui/label';
 
 interface MovementSessionControlsProps {
   movementCategory: MovementCategoryInfo;
