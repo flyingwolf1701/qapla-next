@@ -63,21 +63,24 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     let initialMovementForSession = movementCategory.progressions
                                       .find(p => p.level === determinedStartingLevelAttempt);
 
-    if (!initialMovementForSession) {
+    // Fallback if the determined starting level doesn't exist (e.g., user level is 1, determined is -1)
+    if (!initialMovementForSession) { 
         initialMovementForSession = movementCategory.progressions
                                     .filter(p => p.level > 0) // Prefer actual exercises over warm-ups for type setting
                                     .sort((a,b) => a.level - b.level)[0];
     }
     
+    // Further fallback if no level > 0 progressions exist (should be rare)
     if (!initialMovementForSession) {
         initialMovementForSession = movementCategory.progressions.sort((a,b) => a.level - b.level)[0];
     }
 
     if (!initialMovementForSession) {
         console.error(`No valid progressions found for ${movementCategory.name}`);
+        // Default to a safe state if no progressions are found at all
         setSessionFixedExerciseTypeIsRepBased(true); 
         setCurrentExerciseLevel(1);
-        setSessionTargetSeconds(60);
+        setSessionTargetSeconds(60); // Default for time-based if it somehow gets set to that
     } else {
         setCurrentExerciseLevel(initialMovementForSession.level);
         setSessionFixedExerciseTypeIsRepBased(initialMovementForSession.isRepBased);
@@ -86,7 +89,7 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
         }
     }
     
-    // Reset session-specific states
+    // Reset session-specific states whenever the movement category changes or initial level derived from context changes
     setWaveNumber(1);
     setWavesDoneThisSession([]);
     setCurrentWaveReps(0);
@@ -432,7 +435,6 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
               <ChevronUp />
             </Button>
           </div>
-           {currentMovementDetails && <p className="text-sm text-muted-foreground mt-1 ml-12 md:ml-14">Selected: Lvl {currentMovementDetails.level} - {currentMovementDetails.name}</p>}
         </div>
 
         {sessionFixedExerciseTypeIsRepBased ? (
@@ -449,7 +451,7 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
             <TargetTracker currentReps={totalRepsThisMovement + currentWaveReps} targetReps={DEFAULT_TARGET_REPS} />
           </>
         ) : currentMovementDetails ? (
-          <>
+          <div className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="target-seconds-input" className="block font-medium">Set Session Target for Wave {waveNumber} (seconds)</Label>
                 <div className="flex items-center gap-2">
@@ -477,7 +479,7 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
             { !sessionFixedExerciseTypeIsRepBased && 
               <p className="text-sm text-muted-foreground">Total time this movement: {formatTime(totalDurationThisMovement + currentElapsedTime)}</p>
             }
-          </>
+          </div>
         ) : (
             <Alert>
                 <Info className="h-4 w-4" />
@@ -495,8 +497,8 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
                     <li key={index} className="flex justify-between">
                     <span>
                         Wave {wave.wave}: Lvl {wave.level} ({getMovementByLevel(movementCategory, wave.level)?.name})
-                        {wave.reps && ` - ${wave.reps} reps`}
-                        {wave.durationSeconds && ` - ${formatTime(wave.durationSeconds)}`}
+                        {wave.reps !== undefined && ` - ${wave.reps} reps`}
+                        {wave.durationSeconds !== undefined && ` - ${formatTime(wave.durationSeconds)}`}
                     </span>
                     </li>
                 ))}
@@ -512,8 +514,8 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
             Log Wave {waveNumber}
           </Button>
         )}
-        {/* For time-based, the "Log Wave" button is inside Timer component which is in CardContent */}
-        <div className="flex-grow"></div> {/* Pushes the "Done" button to the right if no rep log button */}
+        {/* For time-based, the "Log Wave" button is inside Timer component */}
+        <div className="flex-grow"></div> {/* Pushes the "Done" button to the right if no rep log button or if time-based*/}
         <Button 
             onClick={handleCompleteMovement} 
             className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -524,3 +526,5 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     </Card>
   );
 }
+
+    
