@@ -7,10 +7,9 @@ import type { Movement, MovementCategoryInfo } from "@/lib/types";
 interface LevelSelectorProps {
   currentLevel: number;
   unlockedLevel: number;
-  progressions: Movement[]; 
+  progressions: Movement[];
   onLevelChange: (level: number) => void;
   disabled?: boolean;
-  isRepBasedMode: boolean; // If true, show rep-based. If false, show time-based.
 }
 
 export function LevelSelector({
@@ -19,30 +18,11 @@ export function LevelSelector({
   progressions,
   onLevelChange,
   disabled,
-  isRepBasedMode,
 }: LevelSelectorProps) {
   
-  // Filter progressions:
-  // 1. Level must be <= unlockedLevel OR level 0 (for special cases like warm-ups)
-  // 2. Exercise type (isRepBased) must match the isRepBasedMode.
   const availableProgressions = progressions.filter(p => 
-    (p.level <= unlockedLevel || p.level === 0) && // level 0 exercises are always available if present
-    (p.isRepBased === isRepBasedMode) // Show exercises matching the current mode
+    (p.level <= unlockedLevel || p.level === 0) // Filter only by unlocked level (and level 0)
   ).sort((a,b) => a.level - b.level); // Ensure sorted by level
-
-  // Ensure the currently selected level is an option if it's valid for the current mode
-  const currentProgressionDetails = progressions.find(p => p.level === currentLevel);
-  const isCurrentSelectionValidForMode = currentProgressionDetails && currentProgressionDetails.isRepBased === isRepBasedMode;
-
-  // If current selection is valid for mode and unlocked, but somehow not in availableProgressions, add it.
-  // This can happen if currentLevel is valid but the filter somehow missed it (unlikely with corrected logic but safe).
-  if (currentProgressionDetails && 
-      isCurrentSelectionValidForMode &&
-      (currentProgressionDetails.level <= unlockedLevel || currentProgressionDetails.level === 0) &&
-      !availableProgressions.some(p => p.level === currentLevel)) {
-      availableProgressions.push(currentProgressionDetails);
-      availableProgressions.sort((a,b) => a.level - b.level);
-  }
   
   return (
     <Select
@@ -60,19 +40,12 @@ export function LevelSelector({
           </SelectItem>
         ))}
         
-        {/* Fallback messages */}
-        {availableProgressions.length === 0 && currentProgressionDetails && isCurrentSelectionValidForMode && (
-             <SelectItem value={currentLevel.toString()} disabled>
-                Lvl {currentLevel}: {currentProgressionDetails.name} {currentProgressionDetails.isRepBased ? "" : "(Time)"} (Locked or No Options)
-             </SelectItem>
-        )}
-         {availableProgressions.length === 0 && (!currentProgressionDetails || !isCurrentSelectionValidForMode) && (
+        {availableProgressions.length === 0 && (
              <SelectItem value="disabled" disabled>
-                No {isRepBasedMode ? 'rep-based' : 'time-based'} exercises available.
+                No exercises available for this category.
              </SelectItem>
         )}
       </SelectContent>
     </Select>
   );
 }
-
