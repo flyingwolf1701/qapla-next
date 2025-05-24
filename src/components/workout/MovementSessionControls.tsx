@@ -367,14 +367,14 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
         <div className="flex justify-between items-center">
             <CardTitle className="text-2xl flex items-center gap-2">
             <movementCategory.icon className="h-7 w-7 text-primary" />
-            {movementCategory.name} ({sessionFixedExerciseTypeIsRepBased ? 'Reps' : 'Time'})
+            {movementCategory.name}
             </CardTitle>
             <Badge variant="secondary">Unlocked Lvl: {unlockedLevelForCategory}</Badge>
         </div>
         <CardDescription>
           {sessionFixedExerciseTypeIsRepBased ? 
             `Log your reps for each wave. Target: ${DEFAULT_TARGET_REPS} total reps.` :
-            `Current Exercise: ${currentMovementDetails?.name || 'Timed Hold'}. Wave ${waveNumber} Session Target: ${formatTime(sessionTargetSeconds)}.`
+            `Current Exercise: ${currentMovementDetails?.name || 'Timed Hold'}. Wave ${waveNumber}. Session Target: ${formatTime(sessionTargetSeconds)}.`
           }
           {!sessionFixedExerciseTypeIsRepBased && currentMovementDetails?.defaultDurationSeconds && (
             <span className="block text-xs text-muted-foreground">(Level-up milestone for Lvl {currentMovementDetails.level}: {formatTime(currentMovementDetails.defaultDurationSeconds)} in one wave)</span>
@@ -387,7 +387,7 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
                 <Info className="h-4 w-4" />
                 <AlertTitle>Warm-up/Special Exercise</AlertTitle>
                 <AlertDescription>
-                    {currentMovementDetails.name}. Wave {waveNumber} Session Target: {formatTime(sessionTargetSeconds)}.
+                    {currentMovementDetails.name}. Wave {waveNumber}. Session Target: {formatTime(sessionTargetSeconds)}.
                 </AlertDescription>
             </Alert>
         )}
@@ -396,7 +396,7 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
                 <TimerIcon className="h-4 w-4" />
                 <AlertTitle>Time-Based Exercise</AlertTitle>
                 <AlertDescription>
-                    {currentMovementDetails.name}. Wave {waveNumber} Session Target: {formatTime(sessionTargetSeconds)}.
+                    {currentMovementDetails.name}. Wave {waveNumber}. Session Target: {formatTime(sessionTargetSeconds)}.
                     {currentMovementDetails.defaultDurationSeconds && 
                      <span className="block text-xs">Level-up milestone for Lvl {currentMovementDetails.level}: {formatTime(currentMovementDetails.defaultDurationSeconds)} in one wave.</span>
                     }
