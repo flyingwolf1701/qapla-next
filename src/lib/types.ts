@@ -23,7 +23,8 @@ export interface MovementCategoryInfo {
 export interface WaveData {
   wave: number;
   level: number;
-  reps: number;
+  reps?: number; // Optional for time-based waves
+  durationSeconds?: number; // Optional for rep-based waves
 }
 
 export interface WorkoutEntry {
@@ -33,8 +34,8 @@ export interface WorkoutEntry {
   movementName: MovementName; // Specific movement performed
   levelAchieved: number; // Level of the movement performed
   totalReps?: number; // Total reps completed (for rep-based)
-  durationSeconds?: number; // Total duration in seconds (for time-based)
-  waves?: WaveData[]; // For rep-based
+  durationSeconds?: number; // Total duration in seconds (for time-based) - this could be sum of wave durations
+  waves?: WaveData[]; // For rep-based or multi-segment time-based
   caloriesBurned?: number; // Optional, for future
 }
 
@@ -76,5 +77,5 @@ export interface TimerProps {
   onTargetReached?: () => void; // Callback when targetDuration is reached.
   autoStart?: boolean;
   className?: string;
+  waveNumber?: number; // To display "Log Wave X"
 }
-
