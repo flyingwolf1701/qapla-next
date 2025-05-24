@@ -9,7 +9,7 @@ import { RepInput } from './RepInput';
 import { TargetTracker } from './TargetTracker';
 import { Timer } from './Timer';
 import type { MovementCategoryInfo, WaveData, WorkoutEntry, Movement } from '@/lib/types';
-import { DEFAULT_TARGET_REPS, LEVEL_UP_THRESHOLD_REPS } from '@/lib/types';
+import { DEFAULT_TARGET_REPS } from '@/lib/types';
 import { getMovementByLevel, MOVEMENT_CATEGORIES_DATA } from '@/data/movements';
 import { useWorkoutState } from '@/providers/WorkoutStateProvider';
 import { toast } from '@/hooks/use-toast';
@@ -50,51 +50,42 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     return getMovementByLevel(movementCategory, currentExerciseLevel);
   }, [movementCategory, currentExerciseLevel]);
 
-  // Effect to initialize/reset when the movement category changes
-   useEffect(() => {
-    setUnlockedLevelForCategory(initialUserLevel);
-
-    let determinedStartingLevelAttempt = initialUserLevel; 
-    // Try current unlocked level first
+  // Effect to initialize/reset states when the movementCategory prop changes
+  useEffect(() => {
+    let determinedStartingLevelAttempt = initialUserLevel;
     let initialMovementForSession = movementCategory.progressions.find(p => p.level === determinedStartingLevelAttempt);
 
-    // If not found, try 2 levels below (min 1)
     if (!initialMovementForSession) {
-        determinedStartingLevelAttempt = Math.max(1, initialUserLevel > 2 ? initialUserLevel - 2 : 1);
-        initialMovementForSession = movementCategory.progressions.find(p => p.level === determinedStartingLevelAttempt);
+      determinedStartingLevelAttempt = Math.max(1, initialUserLevel > 2 ? initialUserLevel - 2 : 1);
+      initialMovementForSession = movementCategory.progressions.find(p => p.level === determinedStartingLevelAttempt);
     }
     
-    // If still not found (e.g. Lvl 1 is time-based, user is Lvl 1), find first available of any type at unlocked or below
     if (!initialMovementForSession) {
         initialMovementForSession = movementCategory.progressions
                                     .filter(p => p.level <= initialUserLevel && p.level > 0)
-                                    .sort((a,b) => b.level - a.level)[0]; // Get highest available
+                                    .sort((a,b) => b.level - a.level)[0];
     }
 
-    // Fallback to absolute first progression if nothing else matches
     if (!initialMovementForSession && movementCategory.progressions.length > 0) {
         initialMovementForSession = movementCategory.progressions
-                                    .filter(p => p.level > 0) // Exclude warm-ups for default start
+                                    .filter(p => p.level > 0)
                                     .sort((a,b) => a.level - b.level)[0];
     }
-    // Final fallback if only warm-ups exist or empty progressions
     if (!initialMovementForSession && movementCategory.progressions.length > 0) {
         initialMovementForSession = movementCategory.progressions.sort((a,b) => a.level - b.level)[0];
     }
 
-
     if (!initialMovementForSession) {
-        // Should not happen if category has progressions
-        setCurrentExerciseLevel(1); 
-        setSessionFixedExerciseTypeIsRepBased(true); 
-        setSessionTargetSeconds(60);
+      setCurrentExerciseLevel(1);
+      setSessionFixedExerciseTypeIsRepBased(true);
+      setSessionTargetSeconds(60);
     } else {
-        setCurrentExerciseLevel(initialMovementForSession.level);
-        const initialTypeIsRepBased = initialMovementForSession.isRepBased;
-        setSessionFixedExerciseTypeIsRepBased(initialTypeIsRepBased);
-        if (!initialTypeIsRepBased) {
-            setSessionTargetSeconds(initialMovementForSession.defaultDurationSeconds || 60);
-        }
+      setCurrentExerciseLevel(initialMovementForSession.level);
+      const initialTypeIsRepBased = initialMovementForSession.isRepBased;
+      setSessionFixedExerciseTypeIsRepBased(initialTypeIsRepBased);
+      if (!initialTypeIsRepBased) {
+        setSessionTargetSeconds(initialMovementForSession.defaultDurationSeconds || 60);
+      }
     }
 
     setWaveNumber(1);
@@ -106,7 +97,6 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     setTimerKey(Date.now());
     setLevelUpHintText(null);
     setUpArrowIconIsLock(false);
-
   }, [movementCategory, initialUserLevel]);
 
   // Effect to sync local unlockedLevelForCategory with global userLevels from context
@@ -114,70 +104,66 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
   useEffect(() => {
     const globalCategoryUnlockedLevel = userLevels[movementCategory.id] || 1;
     if (globalCategoryUnlockedLevel !== unlockedLevelForCategory) {
-        setUnlockedLevelForCategory(globalCategoryUnlockedLevel);
+      setUnlockedLevelForCategory(globalCategoryUnlockedLevel);
     }
   }, [userLevels, movementCategory.id, unlockedLevelForCategory]);
 
 
   // Effect for automatic level-up and dynamic UI hints based on current exercise details
   useEffect(() => {
-    if (!currentMovementDetails || currentMovementDetails.level === 0) { // No hints for warm-ups (level 0)
+    if (!currentMovementDetails || currentMovementDetails.level === 0) {
       setLevelUpHintText(null);
       setUpArrowIconIsLock(false);
       return;
     }
 
     const isAtUnlockEdge = currentMovementDetails.level === unlockedLevelForCategory;
-    const canLevelUpFurther = unlockedLevelForCategory < 10; // Max level
-    
-    // Check if there's a next progression OF THE SAME TYPE to unlock
+    const canLevelUpFurther = unlockedLevelForCategory < 10;
     const nextProgressionExists = movementCategory.progressions.some(
-        p => p.level === unlockedLevelForCategory + 1 && p.isRepBased === sessionFixedExerciseTypeIsRepBased
+      p => p.level === unlockedLevelForCategory + 1 && p.isRepBased === sessionFixedExerciseTypeIsRepBased
     );
 
     if (sessionFixedExerciseTypeIsRepBased) {
-        const repsNeededForUnlock = currentMovementDetails.repsToUnlockNext || LEVEL_UP_THRESHOLD_REPS;
-        if (isAtUnlockEdge && canLevelUpFurther && nextProgressionExists) {
-            setLevelUpHintText(`${repsNeededForUnlock} reps to unlock next level.`);
-            const newUpArrowIconIsLock = currentWaveReps < repsNeededForUnlock;
-            setUpArrowIconIsLock(newUpArrowIconIsLock);
+      const repsNeededForUnlock = currentMovementDetails.repsToUnlockNext || DEFAULT_TARGET_REPS; // Fallback to default target if specific not set
+      if (isAtUnlockEdge && canLevelUpFurther && nextProgressionExists) {
+        setLevelUpHintText(`${repsNeededForUnlock} reps to unlock next level.`);
+        const newUpArrowIconIsLock = currentWaveReps < repsNeededForUnlock;
+        setUpArrowIconIsLock(newUpArrowIconIsLock);
 
-            if (currentWaveReps >= repsNeededForUnlock && !newUpArrowIconIsLock) { // reps met and lock was previously on or is now off
-                const newUnlockedLevel = unlockedLevelForCategory + 1;
-                updateUserLevel(movementCategory.id, newUnlockedLevel);
-                // unlockedLevelForCategory will be updated by the sync effect, which will re-evaluate this useEffect
-                toast({ title: "Level Up!", description: `You've unlocked Lvl ${newUnlockedLevel} for ${movementCategory.name}! Qapla'!` });
-                // No need to setLevelUpHintText to null here, it will re-evaluate
-            }
-        } else {
-            setLevelUpHintText(null);
-            setUpArrowIconIsLock(false);
+        if (currentWaveReps >= repsNeededForUnlock && !newUpArrowIconIsLock) {
+          const newUnlockedLevel = unlockedLevelForCategory + 1;
+          updateUserLevel(movementCategory.id, newUnlockedLevel);
+          toast({ title: "Level Up!", description: `You've unlocked Lvl ${newUnlockedLevel} for ${movementCategory.name}! Qapla'!` });
         }
+      } else {
+        setLevelUpHintText(null);
+        setUpArrowIconIsLock(false);
+      }
     } else { // Time-based
-        const durationNeededForUnlock = currentMovementDetails.durationToUnlockNext || currentMovementDetails.defaultDurationSeconds;
-        if (durationNeededForUnlock && isAtUnlockEdge && canLevelUpFurther && nextProgressionExists) {
-             setLevelUpHintText(`${formatTime(durationNeededForUnlock)} to unlock next level (in one wave).`);
-        } else {
-            setLevelUpHintText(null);
-        }
-        setUpArrowIconIsLock(false); // No lock icon for time-based up-arrow currently
+      const durationNeededForUnlock = currentMovementDetails.durationToUnlockNext || currentMovementDetails.defaultDurationSeconds;
+      if (durationNeededForUnlock && isAtUnlockEdge && canLevelUpFurther && nextProgressionExists) {
+        setLevelUpHintText(`${formatTime(durationNeededForUnlock)} to unlock next level (in one wave).`);
+      } else {
+        setLevelUpHintText(null);
+      }
+      setUpArrowIconIsLock(false); // No lock icon for time-based up-arrow currently
     }
 
   }, [
-    currentWaveReps, // For rep-based
-    currentMovementDetails, 
-    unlockedLevelForCategory, 
+    currentWaveReps,
+    currentMovementDetails,
+    unlockedLevelForCategory,
     sessionFixedExerciseTypeIsRepBased,
-    movementCategory, // For progressions data
-    updateUserLevel, // To call level up
-    toast // For notifications
+    movementCategory,
+    updateUserLevel,
+    toast,
   ]);
 
 
   const handleMovementComplete = () => {
     if (!currentMovementDetails) {
-        toast({ title: "Error", description: "No movement details found.", variant: "destructive" });
-        return;
+      toast({ title: "Error", description: "No movement details found.", variant: "destructive" });
+      return;
     }
 
     let entry: WorkoutEntry;
@@ -185,48 +171,44 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     let finalTotalReps = totalRepsThisMovement;
     let finalTotalDuration = totalDurationThisMovement;
 
-    // If there are pending reps/time for the current wave, log them before completing
     if (sessionFixedExerciseTypeIsRepBased && currentWaveReps > 0) {
-        const lastWaveData: WaveData = { wave: waveNumber, level: currentExerciseLevel, reps: currentWaveReps };
-        finalWaves = [...finalWaves, lastWaveData];
-        finalTotalReps += currentWaveReps;
+      const lastWaveData: WaveData = { wave: waveNumber, level: currentExerciseLevel, reps: currentWaveReps };
+      finalWaves = [...finalWaves, lastWaveData];
+      finalTotalReps += currentWaveReps;
     } else if (!sessionFixedExerciseTypeIsRepBased && currentElapsedTime > 0 && !wavesDoneThisSession.find(w => w.wave === waveNumber && w.durationSeconds === currentElapsedTime)) {
-        // Check if this specific wave instance has already been logged via "Log Wave X"
-        // This handles the case where user clicks "Done with Movement" while timer is running but hasn't been explicitly logged.
-        const lastWaveData: WaveData = { wave: waveNumber, level: currentExerciseLevel, durationSeconds: currentElapsedTime };
-        finalWaves = [...finalWaves, lastWaveData];
-        finalTotalDuration += currentElapsedTime;
+      const lastWaveData: WaveData = { wave: waveNumber, level: currentExerciseLevel, durationSeconds: currentElapsedTime };
+      finalWaves = [...finalWaves, lastWaveData];
+      finalTotalDuration += currentElapsedTime;
     }
 
-
     if (sessionFixedExerciseTypeIsRepBased) {
-        if (finalWaves.length === 0 && finalTotalReps === 0) { // Check if anything was actually done
-            toast({ title: "No Reps Logged", description: "Please log at least one wave or some reps before completing.", variant: "destructive" });
-            return;
-        }
-        entry = {
-            id: new Date().toISOString(),
-            date: new Date().toISOString(),
-            categoryName: movementCategory.name,
-            movementName: currentMovementDetails.name,
-            levelAchieved: Math.max(...finalWaves.map(w => w.level), finalWaves.length > 0 ? 1 : currentExerciseLevel),
-            totalReps: finalTotalReps,
-            waves: finalWaves,
-        };
-    } else { // Time-based
-        if (finalWaves.length === 0 && finalTotalDuration === 0) {
-            toast({ title: "No Time Logged", description: "Please log some time before completing.", variant: "destructive" });
-            return;
-        }
-        entry = {
-            id: new Date().toISOString(),
-            date: new Date().toISOString(),
-            categoryName: movementCategory.name,
-            movementName: currentMovementDetails.name,
-            levelAchieved: Math.max(...finalWaves.map(w => w.level), finalWaves.length > 0 ? 1 : currentExerciseLevel),
-            durationSeconds: finalTotalDuration,
-            waves: finalWaves,
-        };
+      if (finalWaves.length === 0 && finalTotalReps === 0) {
+        toast({ title: "No Reps Logged", description: "Please log at least one wave or some reps before completing.", variant: "destructive" });
+        return;
+      }
+      entry = {
+        id: new Date().toISOString(),
+        date: new Date().toISOString(),
+        categoryName: movementCategory.name,
+        movementName: currentMovementDetails.name,
+        levelAchieved: Math.max(...finalWaves.map(w => w.level), finalWaves.length > 0 ? 1 : currentExerciseLevel),
+        totalReps: finalTotalReps,
+        waves: finalWaves,
+      };
+    } else {
+      if (finalWaves.length === 0 && finalTotalDuration === 0) {
+        toast({ title: "No Time Logged", description: "Please log some time before completing.", variant: "destructive" });
+        return;
+      }
+      entry = {
+        id: new Date().toISOString(),
+        date: new Date().toISOString(),
+        categoryName: movementCategory.name,
+        movementName: currentMovementDetails.name,
+        levelAchieved: Math.max(...finalWaves.map(w => w.level), finalWaves.length > 0 ? 1 : currentExerciseLevel),
+        durationSeconds: finalTotalDuration,
+        waves: finalWaves,
+      };
     }
     onMovementComplete(entry);
   };
@@ -234,58 +216,54 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
   const handleExerciseLevelChangeFromDropdown = (level: number) => {
     const newMovementDetails = getMovementByLevel(movementCategory, level);
     if (newMovementDetails) {
-        const newTypeIsRepBased = newMovementDetails.isRepBased;
-        // If type changes, we reset session progress as it's a different kind of effort
-        if (sessionFixedExerciseTypeIsRepBased !== newTypeIsRepBased) {
-            setWaveNumber(1);
-            setWavesDoneThisSession([]);
-            setCurrentWaveReps(0);
-            setTotalRepsThisMovement(0);
-            setCurrentElapsedTime(0);
-            setTotalDurationThisMovement(0);
-            setTimerKey(Date.now()); // Reset timer
-             if (!newTypeIsRepBased) { // If switching to time-based
-                setSessionTargetSeconds(newMovementDetails.defaultDurationSeconds || 60);
-            }
+      const newTypeIsRepBased = newMovementDetails.isRepBased;
+      if (sessionFixedExerciseTypeIsRepBased !== newTypeIsRepBased) {
+        setWaveNumber(1);
+        setWavesDoneThisSession([]);
+        setCurrentWaveReps(0);
+        setTotalRepsThisMovement(0);
+        setCurrentElapsedTime(0);
+        setTotalDurationThisMovement(0);
+        setTimerKey(Date.now());
+        if (!newTypeIsRepBased) {
+          setSessionTargetSeconds(newMovementDetails.defaultDurationSeconds || 60);
         }
-        setCurrentExerciseLevel(level);
-        setSessionFixedExerciseTypeIsRepBased(newTypeIsRepBased); // Update the fixed type for the session
+      }
+      setCurrentExerciseLevel(level);
+      setSessionFixedExerciseTypeIsRepBased(newTypeIsRepBased);
     }
   };
 
   const handleArrowLevelChange = useCallback((direction: 'up' | 'down') => {
     if (!currentMovementDetails) return;
 
-    // Log current wave if rep-based and reps > 0
     if (sessionFixedExerciseTypeIsRepBased && currentWaveReps > 0) {
       const waveData: WaveData = { wave: waveNumber, level: currentExerciseLevel, reps: currentWaveReps };
       setWavesDoneThisSession(prev => [...prev, waveData]);
       setTotalRepsThisMovement(prev => prev + currentWaveReps);
     }
-    // For time-based, logging wave happens via Timer's "Log Wave" button. Arrows just change level.
-    // Reset current wave inputs for the new level/wave
-    setCurrentWaveReps(0); // Reset for rep-based
-    setTimerKey(Date.now()); // Reset timer display/state for time-based
-    setCurrentElapsedTime(0); // Reset elapsed time for time-based display
+    setCurrentWaveReps(0);
+    setTimerKey(Date.now());
+    setCurrentElapsedTime(0);
 
     const relevantProgressions = movementCategory.progressions
-      .filter(p => p.isRepBased === sessionFixedExerciseTypeIsRepBased && p.level > 0) // Filter by current fixed type and exclude warm-ups
+      .filter(p => p.isRepBased === sessionFixedExerciseTypeIsRepBased && p.level > 0)
       .sort((a, b) => a.level - b.level);
 
     if (relevantProgressions.length === 0) {
-        toast({description: `No other ${sessionFixedExerciseTypeIsRepBased ? 'rep-based' : 'time-based'} exercises available in this category.`});
-        return;
+      toast({ description: `No other ${sessionFixedExerciseTypeIsRepBased ? 'rep-based' : 'time-based'} exercises available in this category.` });
+      return;
     }
-    
+
     let currentIndex = relevantProgressions.findIndex(p => p.level === currentExerciseLevel);
     let newLevelToDisplay = currentExerciseLevel;
 
     if (direction === 'up') {
-        if (upArrowIconIsLock && sessionFixedExerciseTypeIsRepBased) { // Specifically for rep-based lock
-            const repsNeeded = currentMovementDetails.repsToUnlockNext || LEVEL_UP_THRESHOLD_REPS;
-            toast({ description: `Log ${repsNeeded} reps at Lvl ${currentExerciseLevel} to use this level for the next wave or unlock the next level.` });
-            return;
-        }
+      if (upArrowIconIsLock && sessionFixedExerciseTypeIsRepBased) {
+        const repsNeeded = currentMovementDetails.repsToUnlockNext || DEFAULT_TARGET_REPS;
+        toast({ description: `Log ${repsNeeded} reps at Lvl ${currentExerciseLevel} to use this level for the next wave or unlock the next level.` });
+        return;
+      }
       let foundNext = false;
       for (let i = currentIndex + 1; i < relevantProgressions.length; i++) {
         if (relevantProgressions[i].level <= unlockedLevelForCategory) {
@@ -295,32 +273,32 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
         }
       }
       if (!foundNext) {
-         toast({ description: `This is the highest currently available ${sessionFixedExerciseTypeIsRepBased ? 'rep-based' : 'time-based'} exercise up to your unlocked Lvl ${unlockedLevelForCategory}.` });
+        toast({ description: `This is the highest currently available ${sessionFixedExerciseTypeIsRepBased ? 'rep-based' : 'time-based'} exercise up to your unlocked Lvl ${unlockedLevelForCategory}.` });
         return;
       }
-    } else { // direction === 'down'
+    } else {
       if (currentIndex > 0) {
         newLevelToDisplay = relevantProgressions[currentIndex - 1].level;
-      } else if (currentIndex === 0) { // Already at the first relevant exercise
+      } else if (currentIndex === 0) {
         toast({ description: `This is the lowest ${sessionFixedExerciseTypeIsRepBased ? 'rep-based' : 'time-based'} exercise (excluding warm-ups).` });
         return;
-      } else { // Should not happen if currentExerciseLevel is in relevantProgressions
+      } else {
         newLevelToDisplay = relevantProgressions[0]?.level || currentExerciseLevel;
       }
     }
-    
+
     setCurrentExerciseLevel(newLevelToDisplay);
-    if(!sessionFixedExerciseTypeIsRepBased) { // If time-based, update target seconds for new exercise
-        const newMovement = getMovementByLevel(movementCategory, newLevelToDisplay);
-        if(newMovement) {
-            setSessionTargetSeconds(newMovement.defaultDurationSeconds || 60);
-        }
+    if (!sessionFixedExerciseTypeIsRepBased) {
+      const newMovement = getMovementByLevel(movementCategory, newLevelToDisplay);
+      if (newMovement) {
+        setSessionTargetSeconds(newMovement.defaultDurationSeconds || 60);
+      }
     }
-    setWaveNumber(prev => prev + 1); // Increment wave number after changing level
+    setWaveNumber(prev => prev + 1);
 
   }, [
     currentMovementDetails, sessionFixedExerciseTypeIsRepBased, currentWaveReps, currentExerciseLevel, waveNumber,
-    movementCategory, unlockedLevelForCategory, setWavesDoneThisSession, setTotalRepsThisMovement, setWaveNumber, 
+    movementCategory, unlockedLevelForCategory, setWavesDoneThisSession, setTotalRepsThisMovement, setWaveNumber,
     setCurrentExerciseLevel, setCurrentWaveReps, toast, upArrowIconIsLock
   ]);
 
@@ -331,56 +309,50 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const resetCurrentRepWave = () => {
-    setCurrentWaveReps(0);
-  }
-
   const handleTimerComplete = useCallback((timeAchieved: number) => {
-    // This is called when "Log Wave X" is pressed in Timer component
-    setTimeout(() => { // Defer state updates
-        if (!currentMovementDetails || sessionFixedExerciseTypeIsRepBased) return;
+    setTimeout(() => {
+      if (!currentMovementDetails || sessionFixedExerciseTypeIsRepBased) return;
 
-        const newWaveData: WaveData = { wave: waveNumber, level: currentExerciseLevel, durationSeconds: timeAchieved };
-        setWavesDoneThisSession(prev => [...prev, newWaveData]);
-        setTotalDurationThisMovement(prev => prev + timeAchieved);
+      const newWaveData: WaveData = { wave: waveNumber, level: currentExerciseLevel, durationSeconds: timeAchieved };
+      setWavesDoneThisSession(prev => [...prev, newWaveData]);
+      setTotalDurationThisMovement(prev => prev + timeAchieved);
 
-        const durationNeededForUnlock = currentMovementDetails.durationToUnlockNext || currentMovementDetails.defaultDurationSeconds;
-        const isAtUnlockEdge = currentMovementDetails.level === unlockedLevelForCategory;
-        const canLevelUpFurther = unlockedLevelForCategory < 10;
-        const nextProgressionExists = movementCategory.progressions.some(
-             p => p.level === unlockedLevelForCategory + 1 && p.isRepBased === sessionFixedExerciseTypeIsRepBased // Check for same type
-        );
+      const durationNeededForUnlock = currentMovementDetails.durationToUnlockNext || currentMovementDetails.defaultDurationSeconds;
+      const isAtUnlockEdge = currentMovementDetails.level === unlockedLevelForCategory;
+      const canLevelUpFurther = unlockedLevelForCategory < 10;
+      const nextProgressionExists = movementCategory.progressions.some(
+        p => p.level === unlockedLevelForCategory + 1 && p.isRepBased === sessionFixedExerciseTypeIsRepBased
+      );
 
-        if (durationNeededForUnlock && isAtUnlockEdge && timeAchieved >= durationNeededForUnlock && canLevelUpFurther && nextProgressionExists) {
-          const newUnlockedLevel = unlockedLevelForCategory + 1;
-          updateUserLevel(movementCategory.id, newUnlockedLevel);
-          // unlockedLevelForCategory will be updated by the sync effect
-          toast({ title: "Level Up!", description: `You've unlocked Lvl ${newUnlockedLevel} for ${movementCategory.name}! Qapla'!` });
-        } else {
-            toast({ title: `Wave ${waveNumber} Logged`, description: `${currentMovementDetails.name} held for ${formatTime(timeAchieved)}.`, variant: "default" });
-        }
-        setWaveNumber(prev => prev + 1);
-        setTimerKey(Date.now()); // Reset timer for next wave by changing its key
-        setCurrentElapsedTime(0); // Reset for display consistency
+      if (durationNeededForUnlock && isAtUnlockEdge && timeAchieved >= durationNeededForUnlock && canLevelUpFurther && nextProgressionExists) {
+        const newUnlockedLevel = unlockedLevelForCategory + 1;
+        updateUserLevel(movementCategory.id, newUnlockedLevel);
+        toast({ title: "Level Up!", description: `You've unlocked Lvl ${newUnlockedLevel} for ${movementCategory.name}! Qapla'!` });
+      } else {
+        toast({ title: `Wave ${waveNumber} Logged`, description: `${currentMovementDetails.name} held for ${formatTime(timeAchieved)}.`, variant: "default" });
+      }
+      setWaveNumber(prev => prev + 1);
+      setTimerKey(Date.now());
+      setCurrentElapsedTime(0);
     }, 0);
   }, [
-      currentMovementDetails, unlockedLevelForCategory, movementCategory, updateUserLevel, sessionFixedExerciseTypeIsRepBased,
-      waveNumber, currentExerciseLevel, formatTime, toast // Added dependencies
-    ]);
+    currentMovementDetails, unlockedLevelForCategory, movementCategory, updateUserLevel, sessionFixedExerciseTypeIsRepBased,
+    waveNumber, currentExerciseLevel, formatTime, toast
+  ]);
 
   const handleTimerUpdate = useCallback((elapsed: number) => {
-      setCurrentElapsedTime(elapsed);
+    setCurrentElapsedTime(elapsed);
   }, []);
 
   const handleTimerTargetReached = useCallback(() => {
-    if(currentMovementDetails && !sessionFixedExerciseTypeIsRepBased) {
-        setTimeout(() => { // Defer toast
-            toast({
-                title: "Session Target Reached!",
-                description: `${currentMovementDetails.name} held for ${formatTime(sessionTargetSeconds)}. Keep going if you can!`,
-                variant: "default"
-            });
-        },0);
+    if (currentMovementDetails && !sessionFixedExerciseTypeIsRepBased) {
+      setTimeout(() => {
+        toast({
+          title: "Session Target Reached!",
+          description: `${currentMovementDetails.name} held for ${formatTime(sessionTargetSeconds)}. Keep going if you can!`,
+          variant: "default"
+        });
+      }, 0);
     }
   }, [currentMovementDetails, sessionFixedExerciseTypeIsRepBased, sessionTargetSeconds, formatTime, toast]);
 
@@ -389,11 +361,10 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     if (!isNaN(value) && value >= 0) {
       setSessionTargetSeconds(value);
     } else if (e.target.value === "") {
-      setSessionTargetSeconds(0); // Or some other default like previous value
+      setSessionTargetSeconds(0);
     }
   };
 
-  // Determine if down arrow should be disabled
   const downArrowDisabled = useMemo(() => {
     if (!currentMovementDetails) return true;
     const relevantProgressions = movementCategory.progressions
@@ -404,27 +375,24 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     return currentExerciseLevel <= firstRelevantLevel;
   }, [currentExerciseLevel, movementCategory.progressions, sessionFixedExerciseTypeIsRepBased, currentMovementDetails]);
 
-  // Determine if up arrow should be disabled
   const upArrowDisabled = useMemo(() => {
     if (!currentMovementDetails) return true;
-    if (sessionFixedExerciseTypeIsRepBased && upArrowIconIsLock) return false; // If lock is showing, button should be "enabled" to show lock
+    if (sessionFixedExerciseTypeIsRepBased && upArrowIconIsLock) return false;
 
     const relevantProgressions = movementCategory.progressions
-      .filter(p => p.isRepBased === sessionFixedExerciseTypeIsRepBased && p.level > 0) // Must be same type
+      .filter(p => p.isRepBased === sessionFixedExerciseTypeIsRepBased && p.level > 0)
       .sort((a, b) => a.level - b.level);
-    
+
     const currentIndex = relevantProgressions.findIndex(p => p.level === currentExerciseLevel);
-    if (currentIndex === -1) return relevantProgressions.length === 0; // No relevant progressions means disabled
+    if (currentIndex === -1) return relevantProgressions.length === 0;
 
-    // Check if there's a next higher level *of the same type* within unlocked range
     for (let i = currentIndex + 1; i < relevantProgressions.length; i++) {
-        if (relevantProgressions[i].level <= unlockedLevelForCategory) {
-            return false; // Found a higher, available level of the same type
-        }
+      if (relevantProgressions[i].level <= unlockedLevelForCategory) {
+        return false;
+      }
     }
-    return true; // No higher, available level of the same type found
+    return true;
   }, [currentExerciseLevel, unlockedLevelForCategory, movementCategory.progressions, sessionFixedExerciseTypeIsRepBased, currentMovementDetails, upArrowIconIsLock]);
-
 
   const displayedCurrentRepsForTracker = totalRepsThisMovement + currentWaveReps;
 
@@ -432,11 +400,11 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     <Card className="w-full shadow-lg">
       <CardHeader>
         <div className="flex justify-between items-center">
-            <CardTitle className="text-2xl flex items-center gap-2">
+          <CardTitle className="text-2xl flex items-center gap-2">
             <movementCategory.icon className="h-7 w-7 text-primary" />
             {movementCategory.name}
-            </CardTitle>
-            <Badge variant="secondary">Unlocked Lvl: {unlockedLevelForCategory}</Badge>
+          </CardTitle>
+          <Badge variant="secondary">Unlocked Lvl: {unlockedLevelForCategory}</Badge>
         </div>
         <CardDescription>
           {sessionFixedExerciseTypeIsRepBased ?
@@ -459,33 +427,33 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
           
           {sessionFixedExerciseTypeIsRepBased && (
             <div className="flex items-center justify-center gap-2 mt-2">
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleArrowLevelChange('down')}
-                    disabled={downArrowDisabled}
-                    aria-label="Decrease level and log wave"
-                >
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleArrowLevelChange('down')}
+                disabled={downArrowDisabled}
+                aria-label="Decrease level and log wave"
+              >
                 <ChevronDown />
-                </Button>
-                <Button 
-                    onClick={handleMovementComplete} 
-                    variant="outline" 
-                    size="icon" 
-                    title="Finish this movement"
-                    aria-label="Finish this movement"
-                >
-                    <CheckSquare className="h-5 w-5 text-primary" />
-                </Button>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleArrowLevelChange('up')}
-                    disabled={upArrowDisabled}
-                    aria-label="Increase level and log wave"
-                >
-                {sessionFixedExerciseTypeIsRepBased && upArrowIconIsLock ? <Lock/> : <ChevronUp />}
-                </Button>
+              </Button>
+              <Button
+                onClick={handleMovementComplete}
+                variant="outline"
+                size="icon"
+                title="Finish this movement"
+                aria-label="Finish this movement"
+              >
+                <CheckSquare className="h-5 w-5 text-primary" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => handleArrowLevelChange('up')}
+                disabled={upArrowDisabled}
+                aria-label="Increase level and log wave"
+              >
+                {sessionFixedExerciseTypeIsRepBased && upArrowIconIsLock ? <Lock /> : <ChevronUp />}
+              </Button>
             </div>
           )}
         </div>
@@ -496,9 +464,6 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
               <Label htmlFor="rep-input" className="block mb-1 font-medium">Reps for Wave {waveNumber}</Label>
               <div className="flex items-center gap-2">
                 <RepInput reps={currentWaveReps} onRepsChange={setCurrentWaveReps} />
-                <Button variant="ghost" size="icon" onClick={resetCurrentRepWave} title="Reset reps for this wave">
-                    <RotateCcw className="h-4 w-4" />
-                </Button>
               </div>
             </div>
             {levelUpHintText && <p className="text-xs text-muted-foreground text-center mt-1">{levelUpHintText}</p>}
@@ -507,60 +472,60 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
         ) : currentMovementDetails ? (
           <div className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="target-seconds-input" className="block font-medium">Set Session Target for Wave {waveNumber} (seconds)</Label>
-                <div className="flex items-center gap-2">
-                    <Edit3 className="h-5 w-5 text-muted-foreground" />
-                    <Input
-                        id="target-seconds-input"
-                        type="number"
-                        value={sessionTargetSeconds}
-                        onChange={handleTargetSecondsChange}
-                        min="0"
-                        className="w-24"
-                    />
-                    <span className="text-muted-foreground">({formatTime(sessionTargetSeconds)})</span>
-                </div>
+              <Label htmlFor="target-seconds-input" className="block font-medium">Set Session Target for Wave {waveNumber} (seconds)</Label>
+              <div className="flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="target-seconds-input"
+                  type="number"
+                  value={sessionTargetSeconds}
+                  onChange={handleTargetSecondsChange}
+                  min="0"
+                  className="w-24"
+                />
+                <span className="text-muted-foreground">({formatTime(sessionTargetSeconds)})</span>
+              </div>
             </div>
             <Timer
-                key={timerKey}
-                targetDuration={sessionTargetSeconds}
-                onTimerComplete={handleTimerComplete}
-                onTimeUpdate={handleTimerUpdate}
-                onTargetReached={handleTimerTargetReached}
-                autoStart={false}
-                waveNumber={waveNumber}
+              key={timerKey}
+              targetDuration={sessionTargetSeconds}
+              onTimerComplete={handleTimerComplete}
+              onTimeUpdate={handleTimerUpdate}
+              onTargetReached={handleTimerTargetReached}
+              autoStart={false}
+              waveNumber={waveNumber}
             />
             {levelUpHintText && <p className="text-xs text-muted-foreground text-center mt-1">{levelUpHintText}</p>}
-            { !sessionFixedExerciseTypeIsRepBased &&
+            {!sessionFixedExerciseTypeIsRepBased &&
               <p className="text-sm text-muted-foreground text-center">Total time this movement: {formatTime(totalDurationThisMovement + currentElapsedTime)}</p>
             }
           </div>
         ) : (
-             <p className="text-muted-foreground">Select an exercise to begin.</p>
+          <p className="text-muted-foreground">Select an exercise to begin.</p>
         )}
 
         {wavesDoneThisSession.length > 0 && (
-            <div className="pt-2">
+          <div className="pt-2">
             <h4 className="font-medium mb-2 text-sm">Logged Waves this Session:</h4>
             <ScrollArea className="h-[100px] border rounded-md p-2 bg-muted/20">
-                <ul className="space-y-1 text-xs">
+              <ul className="space-y-1 text-xs">
                 {wavesDoneThisSession.map((wave, index) => {
-                    const movementLogged = getMovementByLevel(movementCategory, wave.level);
-                    return (
-                        <li key={index} className="flex justify-between items-center">
-                        <span>
-                            Wave {wave.wave}: Lvl {wave.level} ({movementLogged?.name || 'N/A'})
-                        </span>
-                        <span>
-                            {wave.reps !== undefined && `${wave.reps} reps`}
-                            {wave.durationSeconds !== undefined && `${formatTime(wave.durationSeconds)}`}
-                        </span>
-                        </li>
-                    );
+                  const movementLogged = getMovementByLevel(movementCategory, wave.level);
+                  return (
+                    <li key={index} className="flex justify-between items-center">
+                      <span>
+                        Wave {wave.wave}: Lvl {wave.level} ({movementLogged?.name || 'N/A'})
+                      </span>
+                      <span>
+                        {wave.reps !== undefined && `${wave.reps} reps`}
+                        {wave.durationSeconds !== undefined && `${formatTime(wave.durationSeconds)}`}
+                      </span>
+                    </li>
+                  );
                 })}
-                </ul>
+              </ul>
             </ScrollArea>
-            </div>
+          </div>
         )}
 
       </CardContent>
@@ -573,18 +538,17 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
             <CheckSquare className="mr-2 h-5 w-5" /> Done with {movementCategory.name}
           </Button>
         )}
-         {sessionFixedExerciseTypeIsRepBased && wavesDoneThisSession.length === 0 && currentWaveReps === 0 && (
-            <p className="text-sm text-muted-foreground w-full text-center">
-                Perform reps and use arrows to log waves/change level, or click the <CheckSquare className="inline h-4 w-4 mx-1" /> button above to finish.
-            </p>
-         )}
-         {sessionFixedExerciseTypeIsRepBased && (wavesDoneThisSession.length > 0 || currentWaveReps > 0) && (
-            <p className="text-sm text-muted-foreground w-full text-center">
-                Use arrows to log waves/change level, or click the <CheckSquare className="inline h-4 w-4 mx-1" /> button above to finish.
-            </p>
-         )}
+        {sessionFixedExerciseTypeIsRepBased && wavesDoneThisSession.length === 0 && currentWaveReps === 0 && (
+          <p className="text-sm text-muted-foreground w-full text-center">
+            Perform reps and use arrows to log waves/change level, or click the <CheckSquare className="inline h-4 w-4 mx-1" /> button above to finish.
+          </p>
+        )}
+        {sessionFixedExerciseTypeIsRepBased && (wavesDoneThisSession.length > 0 || currentWaveReps > 0) && (
+          <p className="text-sm text-muted-foreground w-full text-center">
+            Use arrows to log waves/change level, or click the <CheckSquare className="inline h-4 w-4 mx-1" /> button above to finish.
+          </p>
+        )}
       </CardFooter>
     </Card>
   );
 }
-
