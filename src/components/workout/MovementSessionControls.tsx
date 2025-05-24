@@ -17,8 +17,8 @@ import { ChevronDown, ChevronUp, CheckSquare, RotateCcw, Info, TimerIcon, Edit3 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
-import { Input } from '@/components/ui/input'; // Keep this for target seconds input
-import { Label } from '@/components/ui/label'; // Keep this for target seconds input
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface MovementSessionControlsProps {
   movementCategory: MovementCategoryInfo;
@@ -37,10 +37,10 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
   const [totalRepsThisMovement, setTotalRepsThisMovement] = useState(0);
   const [wavesDoneThisSession, setWavesDoneThisSession] = useState<WaveData[]>([]);
 
-  const [completedDuration, setCompletedDuration] = useState<number | null>(null); // Time logged by user pressing "Log Time"
-  const [currentElapsedTime, setCurrentElapsedTime] = useState<number>(0); // Live time from timer for "Done with movement"
+  const [completedDuration, setCompletedDuration] = useState<number | null>(null);
+  const [currentElapsedTime, setCurrentElapsedTime] = useState<number>(0);
   const [timerKey, setTimerKey] = useState(Date.now());
-  const [sessionTargetSeconds, setSessionTargetSeconds] = useState<number>(60); // Default for time-based exercises, user can change
+  const [sessionTargetSeconds, setSessionTargetSeconds] = useState<number>(60);
 
   const currentMovementDetails: Movement | undefined = useMemo(() => {
     const potentialMovement = movementCategory.progressions.find(p => p.level === currentExerciseLevel);
@@ -55,8 +55,6 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
   }, [userLevels, movementCategory.id]);
 
   useEffect(() => {
-    // This effect resets state when the component is effectively "restarted" for a new movement category
-    // or when the user's overall level for this category changes significantly.
     if (waveNumber === 1 && totalRepsThisMovement === 0 && completedDuration === null && currentElapsedTime === 0) {
       const newStartLevel = Math.max(1, (userLevels[movementCategory.id] || 1) > 0 ? (userLevels[movementCategory.id] || 1) -2 : 1);
       setCurrentExerciseLevel(newStartLevel);
@@ -67,15 +65,12 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
   }, [userLevels, movementCategory.id, waveNumber, totalRepsThisMovement, completedDuration, currentElapsedTime]);
   
   useEffect(() => {
-    // Update sessionTargetSeconds when currentMovementDetails changes (e.g., level change or new exercise)
     if (currentMovementDetails && !isCurrentExerciseRepBased && currentMovementDetails.defaultDurationSeconds) {
       setSessionTargetSeconds(currentMovementDetails.defaultDurationSeconds);
     } else if (!isCurrentExerciseRepBased) {
-      // Fallback if no defaultDurationSeconds (e.g. for a new time-based exercise not yet configured)
       setSessionTargetSeconds(60); 
     }
-    // Reset timer things when exercise changes
-    setTimerKey(Date.now()); // Forces Timer component to remount/reset
+    setTimerKey(Date.now());
     setCompletedDuration(null);
     setCurrentElapsedTime(0);
   }, [currentMovementDetails, isCurrentExerciseRepBased]);
@@ -141,8 +136,6 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
             waves: finalWaves,
         };
     } else { 
-        // For time-based, prefer completedDuration (from "Log Time" button)
-        // Fallback to currentElapsedTime if "Done with movement" is clicked while timer is running
         const durationToLog = completedDuration ?? currentElapsedTime; 
         if (durationToLog === null || durationToLog === 0) {
             toast({ title: "Timer Not Used", description: "Please start the timer or log some time before completing.", variant: "destructive" });
@@ -164,29 +157,24 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
   const handleExerciseLevelChange = (level: number) => {
     setCurrentExerciseLevel(level);
     setCurrentWaveReps(0); 
-    // Timer related resets are handled by useEffect on currentMovementDetails
   };
 
   const decreaseLevel = () => {
     const currentProgressionIndex = movementCategory.progressions.findIndex(p => p.level === currentExerciseLevel);
     if (currentProgressionIndex > 0) {
-      // Check if the previous progression in the array is rep-based if current is rep-based, or time-based if current is time-based
       const prevProgression = movementCategory.progressions[currentProgressionIndex - 1];
       if (prevProgression.isRepBased === isCurrentExerciseRepBased) {
         handleExerciseLevelChange(prevProgression.level);
       } else {
-        // If type mismatch, try to find the closest previous one of the same type
         for (let i = currentProgressionIndex - 1; i >= 0; i--) {
             if (movementCategory.progressions[i].isRepBased === isCurrentExerciseRepBased) {
                 handleExerciseLevelChange(movementCategory.progressions[i].level);
                 return;
             }
         }
-        // If no match, just go to the immediate previous (might change exercise type) or stay
          handleExerciseLevelChange(prevProgression.level);
       }
     } else if (currentExerciseLevel > 1) {
-        // Fallback for non-array based level changes (should ideally not happen if progressions are dense)
         handleExerciseLevelChange(currentExerciseLevel - 1);
     }
   };
@@ -198,14 +186,13 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
         if (nextProgression.level <= unlockedLevelForCategory && nextProgression.isRepBased === isCurrentExerciseRepBased) {
             handleExerciseLevelChange(nextProgression.level);
             return;
-        } else if (nextProgression.level <= unlockedLevelForCategory) { // Type mismatch, try to find next of same type
+        } else if (nextProgression.level <= unlockedLevelForCategory) { 
              for (let i = currentProgressionIndex + 1; i < movementCategory.progressions.length; i++) {
                 if (movementCategory.progressions[i].level <= unlockedLevelForCategory && movementCategory.progressions[i].isRepBased === isCurrentExerciseRepBased) {
                     handleExerciseLevelChange(movementCategory.progressions[i].level);
                     return;
                 }
             }
-            // If no further match of same type, but next is unlocked, allow type switch
             if(nextProgression.level <= unlockedLevelForCategory) {
                 handleExerciseLevelChange(nextProgression.level);
                 return;
@@ -213,14 +200,13 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
         }
     }
     
-    // If at unlocked level and there's a next progression to unlock
     if (currentExerciseLevel === unlockedLevelForCategory && unlockedLevelForCategory < 10 && movementCategory.progressions.some(p => p.level > unlockedLevelForCategory)) {
          const nextLevelInfo = movementCategory.progressions.find(p=>p.level === unlockedLevelForCategory + 1);
          const levelUpCriteria = !isCurrentExerciseRepBased && currentMovementDetails?.defaultDurationSeconds ?
             `holding Level ${unlockedLevelForCategory} (${currentMovementDetails.name}) for ${formatTime(currentMovementDetails.defaultDurationSeconds)}` :
             `${LEVEL_UP_THRESHOLD_REPS} reps at Level ${unlockedLevelForCategory}`;
          toast({description: `Unlock Level ${unlockedLevelForCategory+1}${nextLevelInfo ? ' ('+nextLevelInfo.name+')' : ''} by ${levelUpCriteria}.`})
-    } else if (currentExerciseLevel < unlockedLevelForCategory && currentExerciseLevel < 10) { // General increase if below unlocked and not max
+    } else if (currentExerciseLevel < unlockedLevelForCategory && currentExerciseLevel < 10) {
         handleExerciseLevelChange(currentExerciseLevel + 1);
     }
   };
@@ -230,13 +216,11 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
   }
   
   const handleTimerComplete = useCallback((timeAchieved: number) => {
-    // This is called when "Log Time" is pressed in the Timer component
     setCompletedDuration(timeAchieved); 
-    setCurrentElapsedTime(timeAchieved); // Also update currentElapsedTime for consistency if "Done" is clicked immediately
+    setCurrentElapsedTime(timeAchieved);
     
     if (!currentMovementDetails || isCurrentExerciseRepBased) return;
 
-    // Level-up check is based on defaultDurationSeconds (milestone)
     const milestoneDuration = currentMovementDetails.defaultDurationSeconds || 0;
     
     if (timeAchieved >= milestoneDuration && 
@@ -254,16 +238,18 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
   }, [currentMovementDetails, unlockedLevelForCategory, movementCategory.id, movementCategory.name, updateUserLevel, isCurrentExerciseRepBased]);
 
   const handleTimerUpdate = useCallback((elapsed: number) => {
-      setCurrentElapsedTime(elapsed); // Live update from timer
+      setCurrentElapsedTime(elapsed);
   }, []);
 
   const handleTimerTargetReached = useCallback(() => {
     if(currentMovementDetails && !isCurrentExerciseRepBased) {
-        toast({
-            title: "Session Target Reached!",
-            description: `${currentMovementDetails.name} held for ${formatTime(sessionTargetSeconds)}. Keep going if you can!`,
-            variant: "default"
-        });
+        setTimeout(() => {
+            toast({
+                title: "Session Target Reached!",
+                description: `${currentMovementDetails.name} held for ${formatTime(sessionTargetSeconds)}. Keep going if you can!`,
+                variant: "default"
+            });
+        }, 0);
     }
   }, [currentMovementDetails, isCurrentExerciseRepBased, sessionTargetSeconds]);
 
@@ -272,11 +258,10 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     if (!isNaN(value) && value >= 0) {
       setSessionTargetSeconds(value);
     } else if (e.target.value === "") {
-      setSessionTargetSeconds(0); // Or a sensible minimum like 5 seconds
+      setSessionTargetSeconds(0);
     }
   };
 
-  // Function to format time for display (MM:SS)
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -383,19 +368,19 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
                         type="number"
                         value={sessionTargetSeconds}
                         onChange={handleTargetSecondsChange}
-                        min="0" // Or a more sensible minimum like 5
+                        min="0"
                         className="w-24"
                     />
                     <span className="text-muted-foreground">({formatTime(sessionTargetSeconds)})</span>
                 </div>
             </div>
             <Timer
-                key={timerKey} // To reset timer when exercise changes
+                key={timerKey}
                 targetDuration={sessionTargetSeconds}
                 onTimerComplete={handleTimerComplete}
                 onTimeUpdate={handleTimerUpdate}
                 onTargetReached={handleTimerTargetReached}
-                autoStart={false} // User explicitly starts timer
+                autoStart={false}
             />
           </>
         ) : (
@@ -420,3 +405,4 @@ export function MovementSessionControls({ movementCategory, initialUserLevel, on
     </Card>
   );
 }
+
