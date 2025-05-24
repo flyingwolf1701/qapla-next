@@ -8,7 +8,7 @@ export interface Movement {
   level: number;
   description?: string;
   isRepBased: boolean; // True for rep-based, false for time-based
-  defaultDurationSeconds?: number; // For time-based exercises, this is the target duration.
+  defaultDurationSeconds?: number; // For time-based exercises, this is the target duration for level-up milestones.
 }
 
 export type MovementCategoryName = 'Push' | 'Pull' | 'Dips' | 'Legs' | 'Core';
@@ -71,8 +71,9 @@ export const LEVEL_UP_THRESHOLD_REPS = 30; // For rep-based exercises
 // For Timer Component
 export interface TimerProps {
   targetDuration: number; // in seconds. Timer counts UP to this.
-  onTimerComplete?: (timeAchieved: number) => void; // Callback when timer target is reached or skipped. Passes actual time.
+  onTimerComplete?: (timeAchieved: number) => void; // Callback when timer is manually logged. Passes actual time.
   onTimeUpdate?: (elapsedTime: number) => void; // Callback on every second tick with current elapsed time.
+  onTargetReached?: () => void; // Callback when targetDuration is reached.
   autoStart?: boolean;
   className?: string;
 }
