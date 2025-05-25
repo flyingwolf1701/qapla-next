@@ -76,20 +76,10 @@ export default function WorkoutSessionPage() {
     // If moveToNextMovement is true, the context updates and this component re-renders with the new movement
   };
 
-  const handleEndSessionEarly = () => {
-    if (confirm("Are you sure you want to end this workout session early? Any progress on the current movement won't be saved.")) {
-        clearCurrentWorkout();
-        router.push('/');
-    }
-  }
-
   return (
     <div className="space-y-8">
         <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">Workout Session</h1>
-            <Button onClick={handleEndSessionEarly} variant="outline" size="sm">
-                End Session Early
-            </Button>
         </div>
       
       <div className="grid lg:grid-cols-3 gap-6">
