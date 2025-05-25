@@ -10,6 +10,7 @@ interface LevelSelectorProps {
   progressions: Movement[];
   onLevelChange: (level: number) => void;
   disabled?: boolean;
+  // movementCategory: MovementCategoryInfo; // Not strictly needed if progression.name is unique within progressions list
 }
 
 export function LevelSelector({
@@ -35,7 +36,7 @@ export function LevelSelector({
       </SelectTrigger>
       <SelectContent>
         {availableProgressions.map((progression) => (
-          <SelectItem key={progression.level} value={progression.level.toString()}>
+          <SelectItem key={progression.name} value={progression.level.toString()}>
             Lvl {progression.level}: {progression.name} {progression.isRepBased ? "" : "(Time)"}
           </SelectItem>
         ))}
