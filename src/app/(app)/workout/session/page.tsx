@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { MovementSessionControls } from '@/components/workout/MovementSessionControls';
 import { useWorkoutState } from '@/providers/WorkoutStateProvider';
@@ -36,6 +36,15 @@ export default function WorkoutSessionPage() {
   }, [currentWorkoutSession, isLoading, router]);
 
   const currentSelectedMovement = getCurrentMovement();
+
+  const sessionSpecificHistory = useMemo(() => {
+    if (!currentSelectedMovement) {
+      return [];
+    }
+    return workoutHistory.filter(
+      (entry) => entry.categoryName === currentSelectedMovement.category.name
+    );
+  }, [workoutHistory, currentSelectedMovement]);
 
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-[calc(100vh-200px)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /> <span className="ml-4 text-xl">Loading Session...</span></div>;
@@ -91,7 +100,7 @@ export default function WorkoutSessionPage() {
           />
         </div>
         <div className="lg:col-span-1">
-            <WorkoutLog history={workoutHistory} title="Session Log" maxEntries={5} />
+            <WorkoutLog history={sessionSpecificHistory} title="Session Log" maxEntries={5} />
         </div>
       </div>
 
