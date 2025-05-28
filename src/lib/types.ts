@@ -1,55 +1,47 @@
 
 import type { LucideIcon } from 'lucide-react';
+import type { Movement } from '@/data/movements'; // Import Movement type
 
 export type MovementName = string;
-
-export interface Movement {
-  name: MovementName;
-  level: number;
-  description?: string;
-  isRepBased: boolean; // True for rep-based, false for time-based
-  defaultDurationSeconds?: number; // For time-based exercises, this is the target duration for level-up milestones.
-  repsToUnlockNext?: number; // Reps needed at this level to unlock the next level
-  durationToUnlockNext?: number; // Duration needed at this level to unlock the next time-based level
-}
-
 export type MovementCategoryName = 'Push' | 'Pull' | 'Dips' | 'Legs' | 'Core';
 
 export interface MovementCategoryInfo {
-  id: string; // e.g., 'push'
-  name: MovementCategoryName;
+  id: string; // e.g., 'push', 'pull'. Corresponds to keys in ALL_MOVEMENTS.calisthenics
+  name: MovementCategoryName; // e.g., 'Push', 'Pull'
   icon: LucideIcon;
-  progressions: Movement[];
+  progressions: Movement[]; // Uses the detailed Movement type from data/movements.ts
 }
 
 export interface WaveData {
   wave: number;
   level: number;
-  reps?: number; // Optional for time-based waves
-  durationSeconds?: number; // Optional for rep-based waves
+  reps?: number;
+  durationSeconds?: number;
 }
 
 export interface WorkoutEntry {
-  id: string; // unique id for the log entry, e.g., timestamp
-  date: string; // ISO string
+  id: string;
+  date: string;
   categoryName: MovementCategoryName;
-  movementName: MovementName; // Specific movement performed
-  levelAchieved: number; // Level of the movement performed
-  totalReps?: number; // Total reps completed (for rep-based)
-  durationSeconds?: number; // Total duration in seconds (for time-based) - this could be sum of wave durations
-  waves?: WaveData[]; // For rep-based or multi-segment time-based
-  caloriesBurned?: number; // Optional, for future
+  movementName: MovementName;
+  levelAchieved: number;
+  totalReps?: number;
+  durationSeconds?: number;
+  waves?: WaveData[];
+  caloriesBurned?: number;
 }
 
 export interface UserLevels {
-  [key: string]: number; // categoryId: level
+  [categoryId: string]: number; // categoryId (e.g., 'push'): level
 }
 
-// Used for passing selected movements to the session
 export interface SelectedMovement {
   category: MovementCategoryInfo;
-  startingLevel: number;
+  startingLevel: number; // The level user was at for this category when workout session started
 }
+
+export const DEFAULT_TARGET_REPS = 50;
+export const LEVEL_UP_THRESHOLD_REPS = 30; // Fallback if not defined on movement
 
 export interface WorkoutContextType {
   userLevels: UserLevels;
@@ -62,22 +54,17 @@ export interface WorkoutContextType {
   startWorkoutSession: (selectedCategories: MovementCategoryInfo[]) => void;
   completeMovement: (entry: WorkoutEntry) => void;
   updateUserLevel: (categoryId: string, level: number) => void;
-  moveToNextMovement: () => boolean; // Returns true if there is a next movement, false otherwise
+  moveToNextMovement: () => boolean;
   getCurrentMovement: () => SelectedMovement | null;
   clearCurrentWorkout: () => void;
   getAiRecommendations: () => Promise<string | null>;
 }
 
-export const DEFAULT_TARGET_REPS = 50;
-export const LEVEL_UP_THRESHOLD_REPS = 30; // Fallback for rep-based exercises
-
-// For Timer Component
 export interface TimerProps {
-  targetDuration: number; // in seconds. Timer counts UP to this.
-  onTimeUpdate?: (elapsedTime: number) => void; // Callback on every second tick with current elapsed time.
-  onTargetReached?: () => void; // Callback when targetDuration is reached.
+  targetDuration: number;
+  onTimeUpdate?: (elapsedTime: number) => void;
+  onTargetReached?: () => void;
   autoStart?: boolean;
   className?: string;
-  // waveNumber prop is no longer needed here as logging is handled by parent
+  waveNumber?: number;
 }
-

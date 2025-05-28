@@ -5,13 +5,14 @@ import type { ReactNode } from 'react';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { WorkoutContextType, UserLevels, WorkoutEntry, MovementCategoryInfo, SelectedMovement, MovementCategoryName } from '@/lib/types';
 import { getWorkoutRecommendations } from '@/ai/flows/adaptive-workout-recommendations';
-import { MOVEMENT_CATEGORIES_DATA } from '@/data/movements';
+import { ALL_MOVEMENTS } from '@/data/movements'; // Changed import
 
 const LOCAL_STORAGE_USER_LEVELS_KEY = 'qapla_userLevels';
 const LOCAL_STORAGE_WORKOUT_HISTORY_KEY = 'qapla_workoutHistory';
 
-const defaultUserLevels: UserLevels = MOVEMENT_CATEGORIES_DATA.reduce((acc, category) => {
-  acc[category.id] = 1;
+// Initialize defaultUserLevels based on ALL_MOVEMENTS.calisthenics keys
+const defaultUserLevels: UserLevels = Object.keys(ALL_MOVEMENTS.calisthenics).reduce((acc, categoryId) => {
+  acc[categoryId] = 1; // categoryId will be 'push', 'pull', etc.
   return acc;
 }, {} as UserLevels);
 
@@ -30,7 +31,10 @@ export const WorkoutStateProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       const storedLevels = localStorage.getItem(LOCAL_STORAGE_USER_LEVELS_KEY);
       if (storedLevels) {
-        setUserLevels(JSON.parse(storedLevels));
+        const parsedLevels = JSON.parse(storedLevels);
+        // Ensure all categories from ALL_MOVEMENTS are present in loaded levels
+        const synchronizedLevels = { ...defaultUserLevels, ...parsedLevels };
+        setUserLevels(synchronizedLevels);
       } else {
         setUserLevels(defaultUserLevels);
         localStorage.setItem(LOCAL_STORAGE_USER_LEVELS_KEY, JSON.stringify(defaultUserLevels));
@@ -45,8 +49,11 @@ export const WorkoutStateProvider: React.FC<{ children: ReactNode }> = ({ childr
     } catch (e) {
       console.error("Failed to initialize state from localStorage:", e);
       setError("Failed to load saved data. Using defaults.");
+      // Ensure defaults are set on error
       setUserLevels(defaultUserLevels);
       setWorkoutHistory([]);
+      localStorage.setItem(LOCAL_STORAGE_USER_LEVELS_KEY, JSON.stringify(defaultUserLevels));
+      localStorage.setItem(LOCAL_STORAGE_WORKOUT_HISTORY_KEY, JSON.stringify([]));
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +66,8 @@ export const WorkoutStateProvider: React.FC<{ children: ReactNode }> = ({ childr
   const startWorkoutSession = useCallback((selectedCategories: MovementCategoryInfo[]) => {
     const sessionMovements = selectedCategories.map(category => ({
       category,
-      startingLevel: Math.max(1, (userLevels[category.id] || 1) - 2), // Default to 2 levels below current, min 1
+      // startingLevel: Math.max(1, (userLevels[category.id] || 1) - 2), // Default to 2 levels below current, min 1. This will be handled by MovementSessionControls
+      startingLevel: userLevels[category.id] || 1, // Pass the current unlocked level
     }));
     setCurrentWorkoutSession(sessionMovements);
     setCurrentMovementIndex(0);
@@ -76,11 +84,10 @@ export const WorkoutStateProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const completeMovement = useCallback((entry: WorkoutEntry) => {
     setWorkoutHistory(prevHistory => {
-      const newHistory = [entry, ...prevHistory].slice(0, 20); // Keep last 20 entries
+      const newHistory = [entry, ...prevHistory].slice(0, 50); // Keep last 50 entries
       localStorage.setItem(LOCAL_STORAGE_WORKOUT_HISTORY_KEY, JSON.stringify(newHistory));
       return newHistory;
     });
-    // Level up logic is handled within MovementSessionControls and calls updateUserLevel
   }, []);
   
   const moveToNextMovement = useCallback(() => {
@@ -108,13 +115,16 @@ export const WorkoutStateProvider: React.FC<{ children: ReactNode }> = ({ childr
     
     const historyForAI = workoutHistory.slice(0, 10).map(entry => ({
         date: new Date(entry.date).toISOString().split('T')[0],
-        category: entry.categoryName as MovementCategoryName, // Cast as Genkit flow expects specific enum
+        category: entry.categoryName as MovementCategoryName,
         level: entry.levelAchieved,
-        reps: entry.totalReps,
+        reps: entry.totalReps, // This is fine as schema allows undefined
+        // durationSeconds: entry.durationSeconds, // schema doesn't explicitly ask for this, but LLM might infer
     }));
 
-    const currentLevelsForAI = MOVEMENT_CATEGORIES_DATA.reduce((acc, cat) => {
-        acc[cat.name] = userLevels[cat.id] || 1;
+    // Create currentLevelsForAI based on ALL_MOVEMENTS.calisthenics keys
+    const currentLevelsForAI = Object.keys(ALL_MOVEMENTS.calisthenics).reduce((acc, categoryId) => {
+        const categoryName = categoryId.charAt(0).toUpperCase() + categoryId.slice(1) as MovementCategoryName;
+        acc[categoryName] = userLevels[categoryId] || 1;
         return acc;
     }, {} as Record<MovementCategoryName, number>);
 
@@ -123,7 +133,7 @@ export const WorkoutStateProvider: React.FC<{ children: ReactNode }> = ({ childr
         const result = await getWorkoutRecommendations({
             workoutHistory: historyForAI,
             currentLevel: currentLevelsForAI,
-            targetReps: 50, // Default target reps from PRD
+            targetReps: 50, 
         });
         return result.recommendations;
     } catch (aiError) {
