@@ -1,6 +1,6 @@
 
 import type { LucideIcon } from 'lucide-react';
-import { ArrowUpCircle, ArrowDownCircle, GripVertical, Footprints, Zap, ShieldQuestion, Barbell, Repeat } from 'lucide-react';
+import { ArrowUpCircle, ArrowDownCircle, GripVertical, Footprints, Zap, ShieldQuestion, Repeat, Armchair, Dumbbell, Weight, PersonStanding } from 'lucide-react';
 
 // Using GripVertical as a placeholder for Dips, since no perfect icon exists in Lucide for it.
 // It somewhat represents parallel bars.
@@ -14,12 +14,22 @@ export interface Movement {
   repsToUnlockNext?: number; // Reps needed at this level to unlock the next level (if rep-based)
   durationToUnlockNext?: number; // Duration (seconds) needed at this level to unlock next (if time-based)
   defaultDurationSeconds?: number; // Default duration for time-based exercises
+
+  // Fields for weight-based waves (weight-machines)
+  isWeightBased?: boolean;
+  startingWeight?: number;
+  weightIncrement?: number;
+  repsPerWave?: number;
+
   description?: string;
 }
 
 interface MovementTypeData {
   icon: LucideIcon;
-  progressions: Movement[];
+  // Use progressions for level-based movements (calisthenics)
+  progressions?: Movement[];
+  // Use movements for weight-based wave movements
+  movements?: Movement[]; // Simplified to always expect Movement[]
 }
 
 interface WorkoutTypeData {
@@ -50,7 +60,7 @@ export const ALL_MOVEMENTS: AllMovementsData = {
     pull: {
       icon: ArrowDownCircle,
       progressions: [
-        { name: 'Dead Hang', level: 1, isRepBased: false, benchmark: 30, warmupTarget: 15, durationToUnlockNext: 60, defaultDurationSeconds: 30 },
+        { name: 'Dead Hang', level: 1, isRepBased: false, benchmark: 30, warmupTarget: 15, durationToUnlockNext: 60, defaultDurationSeconds: 60 },
         { name: 'Scapular Pulls', level: 2, isRepBased: true, benchmark: 15, warmupTarget: 8, repsToUnlockNext: 30 },
         { name: 'Assisted Pull-Ups/Rows', level: 3, isRepBased: true, benchmark: 12, warmupTarget: 6, repsToUnlockNext: 25 },
         { name: 'Negative Pull-Ups', level: 4, isRepBased: true, benchmark: 10, warmupTarget: 5, repsToUnlockNext: 20 },
@@ -67,7 +77,7 @@ export const ALL_MOVEMENTS: AllMovementsData = {
       progressions: [
         { name: 'Bench Dips (Feet on Floor)', level: 1, isRepBased: true, benchmark: 20, warmupTarget: 10, repsToUnlockNext: 30 },
         { name: 'Bench Dips (Feet Elevated)', level: 2, isRepBased: true, benchmark: 15, warmupTarget: 8, repsToUnlockNext: 25 },
-        { name: 'Support Hold (Parallel Bars)', level: 3, isRepBased: false, benchmark: 30, warmupTarget: 15, durationToUnlockNext: 45, defaultDurationSeconds: 30 },
+        { name: 'Support Hold (Parallel Bars)', level: 3, isRepBased: false, benchmark: 30, warmupTarget: 15, durationToUnlockNext: 45, defaultDurationSeconds: 45 },
         { name: 'Assisted Dips (Machine or Bands)', level: 4, isRepBased: true, benchmark: 12, warmupTarget: 6, repsToUnlockNext: 20 },
         { name: 'Negative Dips', level: 5, isRepBased: true, benchmark: 10, warmupTarget: 5, repsToUnlockNext: 15 },
         { name: 'Full Dips (Parallel Bars)', level: 6, isRepBased: true, benchmark: 10, warmupTarget: 4, repsToUnlockNext: 15 },
@@ -85,11 +95,11 @@ export const ALL_MOVEMENTS: AllMovementsData = {
         { name: 'Bodyweight Squats', level: 3, isRepBased: true, benchmark: 20, warmupTarget: 10, repsToUnlockNext: 30 },
         { name: 'Wide Stance Squats', level: 4, isRepBased: true, benchmark: 15, warmupTarget: 8, repsToUnlockNext: 25 },
         { name: 'Narrow Stance Squats', level: 5, isRepBased: true, benchmark: 15, warmupTarget: 8, repsToUnlockNext: 25 },
-        { name: 'Bulgarian Split Squats', level: 6, isRepBased: true, benchmark: 12, warmupTarget: 6, repsToUnlockNext: 20 }, // per leg
-        { name: 'Pistol Squats w/ Support', level: 7, isRepBased: true, benchmark: 10, warmupTarget: 5, repsToUnlockNext: 15 }, // per leg
-        { name: 'Pistol Squats', level: 8, isRepBased: true, benchmark: 8, warmupTarget: 4, repsToUnlockNext: 10 }, // per leg
+        { name: 'Bulgarian Split Squats', level: 6, isRepBased: true, benchmark: 12, warmupTarget: 6, repsToUnlockNext: 20, description: "Per leg" },
+        { name: 'Pistol Squats w/ Support', level: 7, isRepBased: true, benchmark: 10, warmupTarget: 5, repsToUnlockNext: 15, description: "Per leg" },
+        { name: 'Pistol Squats', level: 8, isRepBased: true, benchmark: 8, warmupTarget: 4, repsToUnlockNext: 10, description: "Per leg" },
         { name: 'Jump Squats', level: 9, isRepBased: true, benchmark: 15, warmupTarget: 5, repsToUnlockNext: 20 },
-        { name: 'Shrimp Squats', level: 10, isRepBased: true, benchmark: 5, warmupTarget: 2 }, // per leg
+        { name: 'Shrimp Squats', level: 10, isRepBased: true, benchmark: 5, warmupTarget: 2, description: "Per leg" },
       ],
     },
     core: {
@@ -104,32 +114,54 @@ export const ALL_MOVEMENTS: AllMovementsData = {
         { name: 'Hanging Leg Raises (Straight Legs)', level: 4, isRepBased: true, benchmark: 12, warmupTarget: 6, repsToUnlockNext: 20 },
         { name: 'Toes-to-Bar', level: 5, isRepBased: true, benchmark: 10, warmupTarget: 5, repsToUnlockNext: 15 },
         { name: 'L-Sit (Floor or Parallel Bars)', level: 6, isRepBased: false, benchmark: 20, warmupTarget: 10, durationToUnlockNext: 30, defaultDurationSeconds: 20 },
-        { name: 'Windshield Wipers (Lying)', level: 7, isRepBased: true, benchmark: 10, warmupTarget: 5, repsToUnlockNext: 15 }, // per side
+        { name: 'Windshield Wipers (Lying)', level: 7, isRepBased: true, benchmark: 10, warmupTarget: 5, repsToUnlockNext: 15, description: "Per side" },
         { name: 'Dragon Flag Negatives', level: 8, isRepBased: true, benchmark: 8, warmupTarget: 4, repsToUnlockNext: 12 },
         { name: 'V-Ups', level: 9, isRepBased: true, benchmark: 15, warmupTarget: 5, repsToUnlockNext: 20 },
         { name: 'Front Lever Tucks/Progressions', level: 10, isRepBased: false, benchmark: 10, warmupTarget: 5, defaultDurationSeconds: 10 },
       ],
     },
   },
-  // 'weight-machines': { // Example structure for future expansion
-  //   legs: {
-  //     icon: Barbell,
-  //     progressions: [
-  //       { name: 'Leg Press', level: 1, isRepBased: true, benchmark: 15, warmupTarget: 8 },
-  //       // ... more leg machine exercises
-  //     ],
-  //   },
-  //   chest: {
-  //       icon: Repeat, // Placeholder
-  //       progressions: [
-  //         { name: 'Chest Press Machine', level: 1, isRepBased: true, benchmark: 12, warmupTarget: 6},
-  //       ]
-  //   }
-  // },
+  'weight-machines': {
+    legs: {
+      icon: Weight, // Replaced Barbell with Weight
+      movements: [ // Changed from progressions to movements for consistency
+        { name: 'Leg Press', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 50, weightIncrement: 10, repsPerWave: 10, benchmark: 10, warmupTarget: 5 },
+        { name: 'Hamstring Curl Machine', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 20, weightIncrement: 5, repsPerWave: 12, benchmark: 12, warmupTarget: 6 },
+        { name: 'Quad Extension Machine', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 25, weightIncrement: 5, repsPerWave: 12, benchmark: 12, warmupTarget: 6 },
+      ],
+    },
+    chest: {
+        icon: Repeat,
+        movements: [
+          { name: 'Chest Press Machine', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 40, weightIncrement: 5, repsPerWave: 12, benchmark: 12, warmupTarget: 6},
+          { name: 'Pec Deck Machine', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 20, weightIncrement: 5, repsPerWave: 15, benchmark: 15, warmupTarget: 7},
+        ]
+    },
+    back: {
+      icon: PersonStanding, // Replaced Body with PersonStanding
+      movements: [
+        { name: 'Lat Pulldown Machine', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 30, weightIncrement: 5, repsPerWave: 10, benchmark: 10, warmupTarget: 5 },
+        { name: 'Seated Row Machine', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 30, weightIncrement: 5, repsPerWave: 10, benchmark: 10, warmupTarget: 5 },
+      ]
+    },
+    shoulders: {
+      icon: Dumbbell,
+      movements: [
+        { name: 'Shoulder Press Machine', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 20, weightIncrement: 5, repsPerWave: 12, benchmark: 12, warmupTarget: 6 },
+        { name: 'Lateral Raise Machine', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 10, weightIncrement: 2.5, repsPerWave: 15, benchmark: 15, warmupTarget: 7 },
+      ]
+    },
+    arms: {
+      icon: Armchair,
+      movements: [
+        { name: 'Bicep Curl Machine', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 15, weightIncrement: 2.5, repsPerWave: 15, benchmark: 15, warmupTarget: 7 },
+        { name: 'Tricep Extension Machine', level: 1, isRepBased: true, isWeightBased: true, startingWeight: 15, weightIncrement: 2.5, repsPerWave: 15, benchmark: 15, warmupTarget: 7 },
+      ]
+    }
+  },
 };
+
 // Helper to get a specific movement by its category ID (e.g., 'push') and level
-// Note: This simple version assumes 'calisthenics' workout type.
-// It also assumes that movementCategory.progressions is already populated correctly when MovementCategoryInfo is created.
 export function getMovementByLevel(movementCategory: { progressions: Movement[] }, level: number): Movement | undefined {
   if (!movementCategory || !movementCategory.progressions) {
     return undefined;

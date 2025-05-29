@@ -1,0 +1,35 @@
+export const ALL_EQUIPMENT = [
+  { id: 1, name: 'bodyweight' },
+  { id: 2, name: 'elevated surface' },
+  { id: 3, name: 'pull-up bar' },
+  { id: 4, name: 'bands' },
+  { id: 5, name: 'dip machine' },
+  { id: 6, name: 'parallel bars' },
+  { id: 7, name: 'rings' },
+  { id: 8, name: 'straight bar' },
+  { id: 9, name: 'weights' }, // For weighted calisthenics
+  { id: 10, name: 'chair' },
+  { id: 11, name: 'support' }, // For assisted movements
+  { id: 12, name: 'floor' },
+  { id: 13, name: 'leg press machine' },
+  { id: 14, name: 'hamstring curl machine' },
+  { id: 15, name: 'quad extension machine' },
+  { id: 16, name: 'chest press machine' },
+  { id: 17, name: 'pec deck machine' },
+  { id: 18, name: 'lat pulldown machine' },
+  { id: 19, name: 'seated row machine' },
+  { id: 20, name: 'shoulder press machine' },
+  { id: 21, name: 'lateral raise machine' },
+  { id: 22, name: 'bicep curl machine' },
+  { id: 23, name: 'tricep extension machine' },
+  { id: 24, name: 'medicine ball' },
+  { id: 25, name: 'wall' },
+  { id: 26, name: 'dumbbell' }, // Singular for dumbbell exercises
+  { id: 27, name: 'dumbbells' }, // Plural for dumbbell exercises
+  { id: 28, name: 'kettlebell' },
+  { id: 29, name: 'bench' },
+  { id: 30, name: 'cable machine' },
+  { id: 31, name: 'rip stick' },
+  { id: 32, name: 'barbell' },
+  { id: 33, name: 'squat rack' },
+];
