@@ -2,15 +2,14 @@
 "use client";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Movement, MovementCategoryInfo } from "@/lib/types";
+import type { Movement } from '@/data/movements'; // Updated import for Movement type
 
 interface LevelSelectorProps {
   currentLevel: number;
   unlockedLevel: number;
-  progressions: Movement[];
+  progressions: Movement[]; // This should be an array of Movement objects
   onLevelChange: (level: number) => void;
   disabled?: boolean;
-  // movementCategory: MovementCategoryInfo; // Not strictly needed if progression.name is unique within progressions list
 }
 
 export function LevelSelector({
@@ -21,7 +20,10 @@ export function LevelSelector({
   disabled,
 }: LevelSelectorProps) {
   
-  const availableProgressions = progressions.filter(p => 
+  // Defensive check: ensure progressions is an array before calling .filter or .sort
+  const safeProgressions = Array.isArray(progressions) ? progressions : [];
+
+  const availableProgressions = safeProgressions.filter(p => 
     (p.level <= unlockedLevel || p.level === 0) // Filter only by unlocked level (and level 0)
   ).sort((a,b) => a.level - b.level); // Ensure sorted by level
   
