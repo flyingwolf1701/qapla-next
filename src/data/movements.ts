@@ -162,9 +162,10 @@ export const ALL_MOVEMENTS: AllMovementsData = {
 };
 
 // Helper to get a specific movement by its category ID (e.g., 'push') and level
-export function getMovementByLevel(movementCategory: { progressions: Movement[] }, level: number): Movement | undefined {
-  if (!movementCategory || !movementCategory.progressions) {
+export function getMovementByLevel(movementCategory: { progressions?: Movement[], movements?: Movement[] }, level: number): Movement | undefined {
+  if (!movementCategory) {
     return undefined;
   }
-  return movementCategory.progressions.find(p => p.level === level);
+  const movements = movementCategory.progressions || movementCategory.movements;
+  return movements?.find(m => m.level === level);
 }
